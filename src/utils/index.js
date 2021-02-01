@@ -75,12 +75,13 @@ function createTemporaryUniqueId(components) {
   return possibleNewIds[0];
 }
 
-function createDefaultImageComponent(pageComponents, image, device) {
-  const id = createTemporaryUniqueId(pageComponents);
-  const numberComponents = pageComponents.length;
-  const landscapePosition = { aspectRatio: device.aspectRatio, x: 0, y: -20 };
+function createDefaultImageComponent({ imageComponents, image, device, page }) {
+  const id = createTemporaryUniqueId(imageComponents);
+  const numberComponents = imageComponents.length;
+  const deviceAspectRatio = device ? device.aspectRatio : 1.8;
+  const landscapePosition = { aspectRatio: deviceAspectRatio, x: 0, y: -20 };
   const portraitPosition = {
-    aspectRatio: device.aspectRatio,
+    aspectRatio: deviceAspectRatio,
     x: 102,
     y: 0,
   };
@@ -89,15 +90,19 @@ function createDefaultImageComponent(pageComponents, image, device) {
     id: id,
     layer: numberComponents + 1,
     order: numberComponents + 1,
-    positions: [device.aspectRatio < 1 ? portraitPosition : landscapePosition],
-    widths: [{ aspectRatio: device.aspectRatio, value: 20 }],
+    positions: [
+      device?.aspectRatio < 1 || page === 'shop'
+        ? portraitPosition
+        : landscapePosition,
+    ],
+    widths: [{ aspectRatio: deviceAspectRatio, value: 20 }],
     image: image,
-    new: true,
+    new: true, // needed to know if id should be removed (so Strapi can create its own)
   };
-  console.log(
-    '🚀 ~ file: index.js ~ line 88 ~ createDefaultImageComponent ~ newComponent',
-    newComponent
-  );
+
+  if (page === 'shop') {
+    newComponent.shopHomeStatus = 'main';
+  }
 
   return newComponent;
 }

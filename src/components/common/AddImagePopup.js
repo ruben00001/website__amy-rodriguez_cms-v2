@@ -229,7 +229,7 @@ function AddImagePopup({
     setSelectedImage('upload');
   }
 
-  async function handleUploadFormSubmit(e) {
+  function handleUploadFormSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
 
@@ -243,14 +243,15 @@ function AddImagePopup({
   function handleExistingImage() {
     const newImage = images.find((image) => image.id === selectedImage);
 
-    setImageComponentsModified((components) => {
-      const newComponent = createDefaultImageComponent(
-        components,
-        newImage,
-        device
-      );
+    setImageComponentsModified((imageComponents) => {
+      const newComponent = createDefaultImageComponent({
+        imageComponents,
+        image: newImage,
+        device,
+        page: 'portfolio',
+      });
 
-      return [...components, newComponent];
+      return [...imageComponents, newComponent];
     });
 
     setUnsavedChange(true);

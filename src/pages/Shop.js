@@ -15,11 +15,13 @@ import { useData } from '../context/DataContext';
 import {
   calcPercentageValue,
   convertValueToPercent,
+  createDefaultImageComponent,
   selectStyleDataForDevice,
 } from '../utils';
 import RndPage from '../components/shop/RndPage';
 import { useRef } from 'react';
 import useCanvasSize from '../hooks/useCanvasSize';
+import AddImagePopup from '../components/shop/AddImagePopup';
 
 const container = (theme) =>
   css({
@@ -55,7 +57,8 @@ const productPrice = (theme) =>
   });
 
 /* NOTES
-  - sort out z-index for hover and drag/resize to make images easier to handle
+  - usePostImapUpload (and other hooks?) should be changed so returns new image rather than updating state
+  - then apply to addimagepopup
   - auto-update page height if image dropped below page level?
   - should maybe disable dragging of images when dragging page
   - what to do for new products
@@ -67,6 +70,10 @@ function Shop() {
   const [productsModified, setProductsModified] = useState(null);
   const [shopPageHeightsModified, setShopPageHeightsModified] = useState(null);
   const [unsavedChange, setUnsavedChange] = useState(false);
+  const [addImagePopUp, setAddImagePopUp] = useState({
+    show: false,
+    product: null,
+  });
 
   const [deviceNum, setDeviceNum] = useState(0);
   const device = useMemo(() => devices[deviceNum], [deviceNum]);
@@ -93,6 +100,10 @@ function Shop() {
   } = useData();
   const productsRootProcessed = useMemo(() => {
     if (shopifyProductsRoot && strapiProductsRoot) {
+      console.log(
+        '🚀 ~ file: Shop.js ~ line 95 ~ productsRootProcessed ~ strapiProductsRoot',
+        strapiProductsRoot
+      );
       const mergedProducts = [];
       shopifyProductsRoot.forEach((shopifyProduct) => {
         const { availableForSale, id: shopifyId } = shopifyProduct;
@@ -144,7 +155,7 @@ function Shop() {
     return singleShopPageHeight * deviceShopHeightMultiplier;
   }
 
-  function findPositionForDeviceAndCalValue(product) {
+  function findPositionForDeviceAndCalcValue(product) {
     const components = product.positions;
     const { x, y } = selectStyleDataForDevice(components, device);
 
@@ -220,8 +231,45 @@ function Shop() {
         }
 
         components.push(newComponent);
+
+        draftProductToUpdate.updated = true;
       })
     );
+  }
+
+  function handleNewMainImage(type, payload) {
+    setProductsModified(
+      produce((draft) => {
+        const productToUpdate = addImagePopUp.product;
+        const draftProductToUpdate = draft.find(
+          (draftProduct) => draftProduct.strapiId === productToUpdate.strapiId
+        );
+        const draftImages = draftProductToUpdate.images;
+
+        draftImages.forEach((image) => {
+          image.shopHomeStatus = 'none';
+        });
+
+        if (type === 'product') {
+          draftImages.forEach((image) => {
+            if (image.id === payload) {
+              image.shopHomeStatus = 'main';
+            }
+          });
+        } else {
+          const newImageComponent = createDefaultImageComponent({
+            imageComponents: draftImages,
+            image: payload,
+            page: 'shop',
+          });
+          draftImages.push(newImageComponent);
+
+          draftProductToUpdate.updated = true;
+        }
+      })
+    );
+
+    setUnsavedChange(true);
   }
 
   function undoAllChanges() {
@@ -241,7 +289,6 @@ function Shop() {
         <InitialLoadingDataOverlay status={rootDataFetchStatus} />
       )}
       {/* <ApiRequestOverlay status={saveStatus} /> */}
-
       <ControlPanel
         position="fixed"
         // save={() => save(portfolioDataModified)}
@@ -249,6 +296,17 @@ function Shop() {
         unsavedChange={unsavedChange}
         undoAllChanges={undoAllChanges}
         ref={controlPanelRef}
+      />
+      <AddImagePopup
+        show={addImagePopUp.show}
+        close={() =>
+          setAddImagePopUp((addImagePopUp) => {
+            return { ...addImagePopUp, show: false };
+          })
+        }
+        product={addImagePopUp.product}
+        handleNewMainImage={handleNewMainImage}
+        device={device}
       />
       {shopPageHeightsModified && singleShopPageHeight && singleShopPageWidth && (
         <RndPage
@@ -271,12 +329,15 @@ function Shop() {
                   )?.image
                 }
                 width={findWidthForDevice(product)}
-                position={findPositionForDeviceAndCalValue(product)}
+                position={findPositionForDeviceAndCalcValue(product)}
                 updateWidth={(newValue) =>
                   updateProductStyle(product, 'widths', newValue)
                 }
                 updatePosition={(newValue) =>
                   updateProductStyle(product, 'positions', newValue)
+                }
+                showImagePopupForProduct={() =>
+                  setAddImagePopUp({ show: true, product })
                 }
                 key={product.strapiId}
               >

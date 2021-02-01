@@ -46,17 +46,13 @@ function RndImage({
   position,
   updateWidth,
   updatePosition,
+  showImagePopupForProduct,
 }) {
   const [hovered, setHovered] = useState(false);
   const [rndActive, setRndActive] = useState(false);
   const [controlsHovered, setControlsHovered] = useState(false);
 
-  function handleRndStart() {
-    setRndActive(true);
-    setHovered(false);
-  }
-
-  function handleDragStop(e, d) {
+  function handleDragStop(_e, d) {
     setHovered(true);
 
     const { x, y } = d;
@@ -64,7 +60,7 @@ function RndImage({
     updatePosition({ x, y });
   }
 
-  function handleResizeStop(e, direction, ref) {
+  function handleResizeStop(_e, _d, ref) {
     setHovered(true);
 
     const widthString = ref.style.width.slice(0, -1);
@@ -89,9 +85,9 @@ function RndImage({
       style={{
         zIndex: hovered || rndActive ? 100 : 0,
       }}
-      onDragStart={handleRndStart}
+      onDragStart={() => setRndActive(true)}
       onDragStop={handleDragStop}
-      onResizeStart={handleRndStart}
+      onResizeStart={() => setRndActive(true)}
       onResizeStop={handleResizeStop}
       lockAspectRatio={true}
       enableResizing={enableResizeProp}
@@ -109,7 +105,11 @@ function RndImage({
         onMouseEnter={() => setControlsHovered(true)}
         onMouseLeave={() => setControlsHovered(false)}
       >
-        <FontAwesomeIcon css={button} icon={faImage} />
+        <FontAwesomeIcon
+          css={button}
+          icon={faImage}
+          onClick={showImagePopupForProduct}
+        />
       </div>
       <Link css={[productLink, !hovered && hide]} to={'/portfolio'}>
         Go to product page
