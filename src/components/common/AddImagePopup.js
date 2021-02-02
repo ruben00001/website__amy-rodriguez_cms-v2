@@ -194,6 +194,7 @@ const initialUploadPreview = { name: null, url: null };
 function AddImagePopup({
   show,
   close,
+  addImage,
   setImageComponentsModified,
   setUnsavedChange,
   device,
@@ -205,6 +206,7 @@ function AddImagePopup({
   const { images } = useData();
   const {
     run: postImageUpload,
+    data: uploadData,
     status: postImageUploadStatus,
   } = usePostImageUpload();
 
@@ -216,6 +218,8 @@ function AddImagePopup({
 
   useLayoutEffect(() => {
     if (postImageUploadStatus === 'resolved') {
+      console.log(uploadData);
+      addImage(uploadData);
       closeAndReset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -236,25 +240,12 @@ function AddImagePopup({
     formData.append('ref', 'image');
     formData.append('field', 'image');
 
-    postImageUpload(formData, setImageComponentsModified, device);
-    setUnsavedChange(true);
+    postImageUpload(formData);
   }
 
   function handleExistingImage() {
     const newImage = images.find((image) => image.id === selectedImage);
-
-    setImageComponentsModified((imageComponents) => {
-      const newComponent = createDefaultImageComponent({
-        imageComponents,
-        image: newImage,
-        device,
-        page: 'portfolio',
-      });
-
-      return [...imageComponents, newComponent];
-    });
-
-    setUnsavedChange(true);
+    addImage(newImage);
     closeAndReset();
   }
 

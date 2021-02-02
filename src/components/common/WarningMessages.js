@@ -42,7 +42,7 @@ const messageIcon = css({
 function WarningMessages({ errors }) {
   return (
     <div css={container}>
-      {errors.order[0] && (
+      {errors.order && (
         <div css={message}>
           <FontAwesomeIcon css={messageIcon} icon={faExclamation} />
           <p>Please ensure no duplication of image 'orders'</p>

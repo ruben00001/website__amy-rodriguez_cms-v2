@@ -14,7 +14,7 @@ import { PageNumbers } from '../components/portfolio/PageNumbers';
 import PortfolioPage from './PortfolioPage';
 import ApiRequestOverlay from '../components/common/ApiRequestOverlay';
 import useSavePortfolio from '../hooks/useSavePortfolio';
-import { createTemporaryUniqueId } from '../utils';
+import { createTemporaryUniqueId, scrollToBottom } from '../utils';
 import PortfolioLandingDndContext from '../components/portfolio/PortfolioLandingDndContext';
 import useLeavePageWarning from '../hooks/useLeavePageWarning';
 import RouterPrompt from '../components/common/RouterPrompt';
@@ -70,6 +70,7 @@ function PortfolioLanding() {
       })
     );
     setUnsavedChange(true);
+    scrollToBottom();
   }
 
   function deletePage(id) {

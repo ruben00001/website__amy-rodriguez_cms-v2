@@ -1,7 +1,5 @@
-import produce from 'immer';
 import { useReducer } from 'react';
 import { useFetch } from '../context/FetchContext';
-import { createDefaultImageComponent } from '../utils';
 
 function asyncReducer(_, action) {
   switch (action.type) {
@@ -36,7 +34,7 @@ function usePostImageUpload() {
     dispatch({ type: 'idle' });
   }
 
-  async function run(formData, setImageComponentsModified, device) {
+  async function run(formData) {
     console.log('running post image upload...');
     dispatch({ type: 'pending' });
     try {
@@ -46,21 +44,17 @@ function usePostImageUpload() {
       formData.append('refId', newImageId);
 
       const uploadResponse = await authFormFetch.post('/upload', formData);
+      console.log(
+        '🚀 ~ file: usePostImageUpload.js ~ line 47 ~ run ~ uploadResponse',
+        uploadResponse
+      );
 
-      setImageComponentsModified((components) => {
-        const newImage = produce(postImageResponse.data, (draft) => {
-          draft.image = uploadResponse.data[0];
-        });
-        const newImageComponent = createDefaultImageComponent(
-          components,
-          newImage,
-          device
-        );
+      const newImageWithUpload = {
+        ...postImageResponse.data,
+        image: { ...uploadResponse.data[0] },
+      };
 
-        return [...components, newImageComponent];
-      });
-
-      dispatch({ type: 'resolved' });
+      dispatch({ type: 'resolved', data: newImageWithUpload });
       setTimeout(() => {
         reset();
       }, 500);

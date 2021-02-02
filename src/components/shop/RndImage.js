@@ -41,11 +41,10 @@ const hide = css({
 
 function RndImage({
   children,
-  image,
+  imgSrc,
   width,
   position,
-  updateWidth,
-  updatePosition,
+  setStyleField,
   showImagePopupForProduct,
 }) {
   const [hovered, setHovered] = useState(false);
@@ -53,20 +52,20 @@ function RndImage({
   const [controlsHovered, setControlsHovered] = useState(false);
 
   function handleDragStop(_e, d) {
-    setHovered(true);
+    setRndActive(false);
 
     const { x, y } = d;
 
-    updatePosition({ x, y });
+    setStyleField('positions', { x, y });
   }
 
   function handleResizeStop(_e, _d, ref) {
-    setHovered(true);
+    setRndActive(false);
 
     const widthString = ref.style.width.slice(0, -1);
     const width = Number(widthString);
 
-    updateWidth(width);
+    setStyleField('widths', width);
   }
 
   const enableResizeProp = {
@@ -95,13 +94,9 @@ function RndImage({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <img
-        css={{ width: '100%' }}
-        src={selectImage(image.image, 'medium')}
-        alt=""
-      />
+      <img css={{ width: '100%' }} src={imgSrc} alt="" />
       <div
-        css={[controlsContainer, !hovered && hide]}
+        css={[controlsContainer, (!hovered || rndActive) && hide]}
         onMouseEnter={() => setControlsHovered(true)}
         onMouseLeave={() => setControlsHovered(false)}
       >
@@ -111,7 +106,10 @@ function RndImage({
           onClick={showImagePopupForProduct}
         />
       </div>
-      <Link css={[productLink, !hovered && hide]} to={'/portfolio'}>
+      <Link
+        css={[productLink, (!hovered || rndActive) && hide]}
+        to={'/portfolio'}
+      >
         Go to product page
       </Link>
       {children}

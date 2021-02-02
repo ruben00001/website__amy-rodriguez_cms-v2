@@ -120,6 +120,22 @@ function convertToLocalTimeString(time) {
   return d.toLocaleTimeString();
 }
 
+function confirmWrapper(message, payload) {
+  const confirmRes = window.confirm(message);
+  if (confirmRes) {
+    payload();
+  }
+}
+
+function createPlaceholderArray(length) {
+  const array = [];
+  for (let i = 0; i < length; i++) {
+    array.push(i);
+  }
+
+  return array;
+}
+
 export {
   selectImage,
   selectStyleDataForDevice,
@@ -130,4 +146,6 @@ export {
   scrollToBottom,
   convertToLocalTimeString,
   sortByAscendingOrder,
+  confirmWrapper,
+  createPlaceholderArray,
 };

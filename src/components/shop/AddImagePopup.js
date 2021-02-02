@@ -222,7 +222,9 @@ function AddImagePopup({
   // device,
 }) {
   // should probs use useReducer here
-  const [selectedImage, setSelectedImage] = useState(selectedImageInitialState);
+  const [selectedImage, setSelectedImage] = useState({
+    ...selectedImageInitialState,
+  });
 
   const { images: allImages } = useData();
   const productImages = useMemo(() => product?.images, [product]);

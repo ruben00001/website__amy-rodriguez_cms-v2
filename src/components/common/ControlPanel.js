@@ -177,7 +177,7 @@ const ControlPanel = forwardRef(
       addImage,
       setDevice,
       save,
-      errors,
+      isError,
       unsavedChange,
       undoAllChanges,
     },
@@ -194,13 +194,6 @@ const ControlPanel = forwardRef(
       isCreatingBuildOrDeploying,
       resetBuildAndDeploy,
     } = useDeploy();
-
-    function isError() {
-      for (const [, value] of Object.entries(errors)) {
-        if (value[0]) return true;
-      }
-      return false;
-    }
 
     return (
       <div css={[container, { position }]} ref={ref}>
@@ -306,10 +299,7 @@ const ControlPanel = forwardRef(
             <FontAwesomeIcon icon={faUndo} />
           </div>
           <div
-            css={[
-              saveButton,
-              ((errors && isError()) || !unsavedChange) && disableButton,
-            ]}
+            css={[saveButton, (isError || !unsavedChange) && disableButton]}
             onClick={save}
           >
             <p>Save</p>

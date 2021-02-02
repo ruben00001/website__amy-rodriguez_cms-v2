@@ -16,6 +16,7 @@ import {
   calcPercentageValue,
   convertValueToPercent,
   createDefaultImageComponent,
+  selectImage,
   selectStyleDataForDevice,
 } from '../utils';
 import RndPage from '../components/shop/RndPage';
@@ -172,6 +173,13 @@ function Shop() {
     return value;
   }
 
+  function selectImageForProduct(images) {
+    const mainImage = images.find((image) => image.shopHomeStatus === 'main')
+      ?.image;
+
+    return mainImage ? selectImage(mainImage.image, 'medium') : null;
+  }
+
   // UPDATE MODIFIED DATA
 
   function updatePageHeight(updatedHeight) {
@@ -323,18 +331,11 @@ function Shop() {
           {productsModified &&
             productsModified.map((product) => (
               <RndImage
-                image={
-                  product.images.find(
-                    (image) => image.shopHomeStatus === 'main'
-                  )?.image
-                }
+                imgSrc={selectImageForProduct(product.images)}
                 width={findWidthForDevice(product)}
                 position={findPositionForDeviceAndCalcValue(product)}
-                updateWidth={(newValue) =>
-                  updateProductStyle(product, 'widths', newValue)
-                }
-                updatePosition={(newValue) =>
-                  updateProductStyle(product, 'positions', newValue)
+                setStyleField={(field, newValue) =>
+                  updateProductStyle(product, field, newValue)
                 }
                 showImagePopupForProduct={() =>
                   setAddImagePopUp({ show: true, product })
