@@ -1,21 +1,18 @@
 import { useReducer, useCallback } from 'react';
 
-function asyncReducer(state, action) {
+function asyncReducer(_, action) {
   switch (action.type) {
     case 'pending': {
       return { status: 'pending', error: null };
     }
     case 'resolved': {
-      return { status: 'resolved', res: action.res, error: null };
-    }
-    case 'complete': {
-      return { ...state, status: 'complete' };
+      return { status: 'resolved', data: action.data, error: null };
     }
     case 'rejected': {
-      return { status: 'rejected', res: null, error: action.error };
+      return { status: 'rejected', data: null, error: action.error };
     }
     case 'idle': {
-      return { status: 'idle', res: null, error: null };
+      return { status: 'idle', data: null, error: null };
     }
     default: {
       throw new Error(`Unhandled action type: ${action.type}`);
@@ -25,25 +22,18 @@ function asyncReducer(state, action) {
 
 const idleState = { status: 'idle', data: null, error: null };
 
-function useAsync() {
+function useAsyncThenProcessData() {
   const [state, dispatch] = useReducer(asyncReducer, {
     ...idleState,
+    // ...initialState,
   });
 
   const run = useCallback((promise, processData) => {
     dispatch({ type: 'pending' });
     promise
-      .then((res) => {
-        dispatch({
-          type: 'resolved',
-          res,
-        });
-        if (processData) processData(res);
-        setTimeout(() => {
-          dispatch({
-            type: 'complete', // gives animations <0.7sec to transition out and not re-trigger when status remains 'resolved'
-          });
-        }, 700);
+      .then((data) => {
+        const processedData = processData(data);
+        dispatch({ type: 'resolved', processedData });
       })
       .catch((error) => {
         dispatch({ type: 'rejected', error });
@@ -57,4 +47,4 @@ function useAsync() {
   return { ...state, run, reset };
 }
 
-export default useAsync;
+export default useAsyncThenProcessData;

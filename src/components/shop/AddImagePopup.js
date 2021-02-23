@@ -4,16 +4,13 @@
 import { jsx, css } from '@emotion/react';
 import { faCheckCircle, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import React, { useState } from 'react';
-// import { useData } from '../../context/DataContext';
-// import usePostImageUpload from '../../hooks/usePostImageUpload';
-import { createDefaultImageComponent, selectImage } from '../../utils';
-import { button } from '../common/styles';
+import React, { useLayoutEffect, useState, useMemo } from 'react';
 
-import { useLayoutEffect } from 'react';
 import { useData } from '../../context/DataContext';
-import { useMemo } from 'react';
-// import ApiRequestOverlay from './ApiRequestOverlay';
+import usePostImageUpload from '../../hooks/usePostImageUpload';
+import { selectImage } from '../../utils';
+import ApiRequestOverlay from '../common/ApiRequestOverlay';
+import { button } from '../common/styles';
 
 const container = (theme) =>
   css({
@@ -214,24 +211,19 @@ const confirmButton = (theme) =>
 
 const selectedImageInitialState = { type: null, id: null };
 
-function AddImagePopup({
-  show,
-  close,
-  product,
-  handleNewMainImage,
-  // device,
-}) {
-  // should probs use useReducer here
+/* NOTES
+  - should be a seperate function for change main image rather than addImage
+*/
+
+function AddImagePopup({ show, close, product, addImage }) {
   const [selectedImage, setSelectedImage] = useState({
     ...selectedImageInitialState,
   });
 
+  // SET UP DATA
+
   const { images: allImages } = useData();
   const productImages = useMemo(() => product?.images, [product]);
-  console.log(
-    '🚀 ~ file: AddImagePopup.js ~ line 230 ~ productImages',
-    productImages
-  );
   const nonProductImages = useMemo(
     () =>
       productImages && allImages
@@ -245,6 +237,25 @@ function AddImagePopup({
     [allImages, productImages]
   );
 
+  // HANDLE UPLOAD
+
+  const {
+    run: postUpload,
+    data: uploadData,
+    status: postUploadStatus,
+  } = usePostImageUpload();
+
+  useLayoutEffect(() => {
+    if (postUploadStatus === 'resolved' && uploadData) {
+      console.log(uploadData);
+      addImage('upload', uploadData);
+      closeAndReset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postUploadStatus, uploadData]);
+
+  // HELPER FUNCTIONS
+
   function handleUploadFile(e) {
     const uploadUrl = URL.createObjectURL(e.target.files[0]);
     const uploadName = e.target.value.match(
@@ -256,23 +267,18 @@ function AddImagePopup({
     });
   }
 
-  function closeAndReset() {
-    close();
-    setSelectedImage(selectedImageInitialState);
-  }
-
   function handleExistingImage() {
     const { type } = selectedImage;
     if (type === 'product') {
       const newMainImageId = selectedImage.id;
-      handleNewMainImage(type, newMainImageId);
+      addImage(type, newMainImageId);
     }
     if (type === 'other') {
       const newImageId = selectedImage.id;
       const newImage = nonProductImages.find(
         (image) => image.id === newImageId
       );
-      handleNewMainImage(type, newImage);
+      addImage(type, newImage);
     }
     closeAndReset();
   }
@@ -283,11 +289,18 @@ function AddImagePopup({
 
     formData.append('ref', 'image');
     formData.append('field', 'image');
+
+    postUpload(formData);
+  }
+
+  function closeAndReset() {
+    close();
+    setSelectedImage(selectedImageInitialState);
   }
 
   return (
     <div css={[container, !show && hideStyle]}>
-      {/* <ApiRequestOverlay status={postImageUploadStatus} /> */}
+      <ApiRequestOverlay status={postUploadStatus} />
       <div css={content}>
         <div css={header}>
           <FontAwesomeIcon
@@ -341,50 +354,55 @@ function AddImagePopup({
             <p>or</p>
             <div />
           </div>
-          <div css={[existingImagesContainer, { minHeight: '15vw' }]}>
-            <p>Select from product's images:</p>
-            <div css={imagesContainer}>
-              {product &&
-                product.images.map((image) => (
-                  <div
-                    css={[
-                      imageContainer,
-                      imageMargin,
-                      selectedImage.type === 'product' &&
-                        selectedImage.id === image.id &&
-                        selectedImageBorder,
-                      image.shopHomeStatus === 'main' && { cursor: 'default' },
-                    ]}
-                    onClick={() => {
-                      if (image.shopHomeStatus !== 'main')
-                        setSelectedImage((selectedImage) => {
-                          return {
-                            ...selectedImage,
-                            type: 'product',
-                            id: image.id,
-                          };
-                        });
-                    }}
-                    key={image.id}
-                  >
-                    <img
-                      src={selectImage(image.image.image, 'thumbnail')}
-                      alt=""
-                    />
-                    {selectedImage.type === 'product' &&
-                      selectedImage.id === image.id && (
-                        <FontAwesomeIcon
-                          css={selectedImageIcon}
-                          icon={faCheckCircle}
-                        />
+          {product && product.images[0] && (
+            <div css={[existingImagesContainer, { minHeight: '15vw' }]}>
+              <p>Select from product's images:</p>
+              <div css={imagesContainer}>
+                {product &&
+                  product.images.map((image) => (
+                    <div
+                      css={[
+                        imageContainer,
+                        imageMargin,
+                        selectedImage.type === 'product' &&
+                          selectedImage.id === image.id &&
+                          selectedImageBorder,
+                        image.shopHomeStatus === 'main' && {
+                          cursor: 'default',
+                        },
+                      ]}
+                      onClick={() => {
+                        if (image.shopHomeStatus !== 'main')
+                          setSelectedImage((selectedImage) => {
+                            return {
+                              ...selectedImage,
+                              type: 'product',
+                              id: image.id,
+                            };
+                          });
+                      }}
+                      key={image.id}
+                    >
+                      <img
+                        src={selectImage(image.image.image, 'thumbnail')}
+                        alt=""
+                      />
+                      {selectedImage.type === 'product' &&
+                        selectedImage.id === image.id && (
+                          <FontAwesomeIcon
+                            css={selectedImageIcon}
+                            icon={faCheckCircle}
+                          />
+                        )}
+                      {image.shopHomeStatus === 'main' && (
+                        <p css={currentImageText}>current image</p>
                       )}
-                    {image.shopHomeStatus === 'main' && (
-                      <p css={currentImageText}>current image</p>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  ))}
+              </div>
             </div>
-          </div>
+          )}
+
           <div css={existingImagesContainer}>
             <p>Select from other images:</p>
             <div css={imagesContainer}>

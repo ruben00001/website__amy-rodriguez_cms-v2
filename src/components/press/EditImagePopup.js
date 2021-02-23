@@ -2,20 +2,19 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import { faCheckCircle, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useState, useLayoutEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useState } from 'react';
+import { faCheckCircle, faTimes } from '@fortawesome/free-solid-svg-icons';
+
 import { useData } from '../../context/DataContext';
 import usePostImageUpload from '../../hooks/usePostImageUpload';
 import { selectImage } from '../../utils';
-import { button } from './styles';
-
-import { useLayoutEffect } from 'react';
-import ApiRequestOverlay from './ApiRequestOverlay';
+import ApiRequestOverlay from '../common/ApiRequestOverlay';
+import { button } from '../common/styles';
 
 const container = (theme) =>
   css({
-    zIndex: 200,
+    zIndex: 500,
     position: 'fixed',
     top: 0,
     left: 0,
@@ -27,11 +26,6 @@ const container = (theme) =>
     backgroundColor: theme.colors.loadingOverlay,
     transition: 'opacity ease-in-out 0.2s',
   });
-
-const hideStyle = css({
-  zIndex: -1,
-  opacity: 0,
-});
 
 const content = css({
   width: '80vw',
@@ -191,7 +185,7 @@ const confirmButton = (theme) =>
 
 const initialUploadPreview = { name: null, url: null };
 
-function AddImagePopup({ show, close, addImage }) {
+function EditImagePopup({ close, editImage }) {
   // should probably use usereducer since these change together
   const [uploadPreview, setUploadPreview] = useState(initialUploadPreview);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -204,15 +198,14 @@ function AddImagePopup({ show, close, addImage }) {
   } = usePostImageUpload();
 
   function closeAndReset() {
-    close();
     setUploadPreview(initialUploadPreview);
     setSelectedImage(null);
+    close();
   }
 
   useLayoutEffect(() => {
     if (postUploadStatus === 'resolved') {
-      console.log(uploadData);
-      addImage(uploadData);
+      editImage(uploadData);
       closeAndReset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,12 +231,13 @@ function AddImagePopup({ show, close, addImage }) {
 
   function handleExistingImage() {
     const newImage = images.find((image) => image.id === selectedImage);
-    addImage(newImage);
+
+    editImage(newImage);
     closeAndReset();
   }
 
   return (
-    <div css={[container, !show && hideStyle]}>
+    <div css={container}>
       <ApiRequestOverlay status={postUploadStatus} />
       <div css={content}>
         <div css={header}>
@@ -340,4 +334,4 @@ function AddImagePopup({ show, close, addImage }) {
   );
 }
 
-export default AddImagePopup;
+export default EditImagePopup;

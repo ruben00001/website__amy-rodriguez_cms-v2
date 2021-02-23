@@ -19,7 +19,6 @@ const GlobalCSS = () => (
       input,
       input:focus {
         border: none;
-        /* cursor: url('../assets/cursors/madeupname.png'), auto; */
       }
       body {
         font-family: Roboto, sans-serif;

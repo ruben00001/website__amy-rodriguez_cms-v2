@@ -1,4 +1,5 @@
 import produce from 'immer';
+import { devices } from '../constants';
 
 const selectImage = (image, quality) => {
   if (!quality) {
@@ -91,9 +92,9 @@ function createDefaultImageComponent({ imageComponents, image, device, page }) {
     layer: numberComponents + 1,
     order: numberComponents + 1,
     positions: [
-      device?.aspectRatio < 1 || page === 'shop'
-        ? portraitPosition
-        : landscapePosition,
+      device?.aspectRatio > 1 || page === 'shop'
+        ? landscapePosition
+        : portraitPosition,
     ],
     widths: [{ aspectRatio: deviceAspectRatio, value: 20 }],
     image: image,
@@ -108,8 +109,18 @@ function createDefaultImageComponent({ imageComponents, image, device, page }) {
 }
 
 function scrollToBottom() {
+  setTimeout(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      left: 0,
+      behavior: 'smooth',
+    });
+  }, 200);
+}
+
+function scrollToTop() {
   window.scrollTo({
-    top: document.body.scrollHeight,
+    top: -500,
     left: 0,
     behavior: 'smooth',
   });
@@ -136,6 +147,92 @@ function createPlaceholderArray(length) {
   return array;
 }
 
+function processShopProducts(shopifyProducts, strapiProducts) {
+  const productsProcessed = [];
+  shopifyProducts.forEach((shopifyProduct) => {
+    const {
+      availableForSale,
+      id: shopifyId,
+      description,
+      title,
+    } = shopifyProduct;
+    const price = shopifyProduct.variants[0].price;
+    const strapiProduct = strapiProducts.find(
+      (strapiProduct) => strapiProduct.shopifyId === shopifyId
+    );
+    if (strapiProduct) {
+      const {
+        id,
+        images,
+        shopHomeImgPositions: positions,
+        shopHomeImgWidths: widths,
+      } = strapiProduct;
+      productsProcessed.push({
+        id,
+        shopifyId,
+        images,
+        positions,
+        widths,
+        availableForSale,
+        price,
+        description,
+        title,
+      });
+    } else {
+      const newProduct = {
+        availableForSale,
+        price,
+        description,
+        title,
+        shopifyId,
+        images: [],
+        positions: devices.map(({ aspectRatio }) => {
+          // done because of high variance in height of shop landing, which in turn, when new product placed at bottom of page, causes product on other pages to be way below bottom of shop landing canvas.
+          return { aspectRatio, x: 0, y: -2 };
+        }),
+        // positions: [{ aspectRatio: 1.8, x: 0, y: -2 }],
+        widths: [{ aspectRatio: 1.8, value: 20 }],
+        id: createTemporaryUniqueId(productsProcessed),
+        new: true,
+      };
+
+      productsProcessed.push(newProduct);
+    }
+  });
+  return productsProcessed;
+}
+
+function filterStrapiProducts(type, strapiProducts, shopifyProducts) {
+  const shopifyProductsIds = shopifyProducts.map((product) => product.id);
+  return strapiProducts.filter((strapiProduct) => {
+    const isInUse = () => shopifyProductsIds.includes(strapiProduct.shopifyId);
+    return type === 'used' ? isInUse() : !isInUse();
+  });
+}
+
+function removeInvalidImageComponentsAndFlagElementIfUpdated(
+  element,
+  fieldKey
+) {
+  const imageComponents = element[fieldKey];
+  const imageComponentsProcessed = imageComponents.filter((imageComponent) => {
+    const validImageComponent = imageComponent?.image?.image?.url;
+    if (!validImageComponent) element.updated = true;
+    return validImageComponent;
+  });
+  element[fieldKey] = imageComponentsProcessed;
+}
+
+function deleteComponentFromParent(component, parent) {
+  const componentToDeleteId = component.id;
+  const componentIndex = parent.findIndex(
+    (component) => component.id === componentToDeleteId
+  );
+  parent.splice(componentIndex, 1);
+}
+
+// ---------------------
+
 export {
   selectImage,
   selectStyleDataForDevice,
@@ -144,8 +241,13 @@ export {
   createTemporaryUniqueId,
   createDefaultImageComponent,
   scrollToBottom,
+  scrollToTop,
   convertToLocalTimeString,
   sortByAscendingOrder,
   confirmWrapper,
   createPlaceholderArray,
+  processShopProducts,
+  filterStrapiProducts,
+  removeInvalidImageComponentsAndFlagElementIfUpdated,
+  deleteComponentFromParent,
 };

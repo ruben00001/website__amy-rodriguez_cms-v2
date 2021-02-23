@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { selectImage } from '../../utils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { button } from '../common/styles';
 
 const container = css({
@@ -45,15 +45,17 @@ const controls = (theme) =>
 
 // });
 
-const link = css({
-  zIndex: 20,
-  position: 'absolute',
-  bottom: 10,
-  right: 10,
-  opacity: 0,
-  transition: 'opacity 0.3s ease-in-out',
-  backgroundColor: 'white',
-});
+const link = (theme) =>
+  css({
+    zIndex: 20,
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    opacity: 0,
+    transition: 'opacity 0.3s ease-in-out',
+    backgroundColor: 'white',
+    color: theme.colors.midgrey,
+  });
 
 export default function OverviewPage({ data, deletePage }) {
   const [hovered, setHovered] = useState(false);
@@ -121,7 +123,7 @@ export default function OverviewPage({ data, deletePage }) {
             }
           }}
         >
-          Edit
+          <FontAwesomeIcon icon={faEdit} />
         </Link>
       </div>
     </div>

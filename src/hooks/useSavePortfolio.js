@@ -5,14 +5,11 @@ import { useLayoutEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { useDeploy } from '../context/DeployContext';
 import { useFetch } from '../context/FetchContext';
-import { sortByAscendingOrder } from '../utils';
+// import { sortByAscendingOrder } from '../utils';
 import useAsync from './useAsync';
 
 function useSavePortfolio(setUnsavedChange) {
-  const {
-    portfolio: portfolioDataRoot,
-    setPortfolio: setPortfolioDataRoot,
-  } = useData();
+  const { portfolioRoot, setPortfolioRoot } = useData();
   const { authFetch } = useFetch();
   const { data, status, run, reset } = useAsync();
   const { setUndeployedSave } = useDeploy();
@@ -29,7 +26,7 @@ function useSavePortfolio(setUnsavedChange) {
         .filter((item) => item.config.method === 'post')
         .map((item) => item.data);
 
-      setPortfolioDataRoot(
+      setPortfolioRoot(
         produce((draft) => {
           deletedPageIds.forEach((deletedPageId) => {
             const pageToDeleteIndex = draft.findIndex(
@@ -46,7 +43,7 @@ function useSavePortfolio(setUnsavedChange) {
           newPages.forEach((newPage) => {
             draft.push(newPage);
           });
-          draft.sort(sortByAscendingOrder);
+          // draft.sort(sortByAscendingOrder);
         })
       );
 
@@ -65,8 +62,6 @@ function useSavePortfolio(setUnsavedChange) {
   }, [status]);
 
   function save(portfolioDataModified) {
-    console.log('SAVING PORTFOLIO...');
-    // FIRST, FIND PAGES TO UPDATE, CREATE AND DELETE
     const reorderedPagesExcludingNewPages = portfolioDataModified.filter(
       (page, i) => page.order !== i + 1 && !page.new
     );
@@ -98,7 +93,7 @@ function useSavePortfolio(setUnsavedChange) {
     );
 
     const modifiedPortfolioIds = portfolioDataModified.map((page) => page.id);
-    const deletedPages = portfolioDataRoot.filter(
+    const deletedPages = portfolioRoot.filter(
       (rootPage) => !modifiedPortfolioIds.includes(rootPage.id)
     );
 

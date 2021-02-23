@@ -15,7 +15,7 @@ const { Provider } = DeployContext;
 // should probs change undeployedSave to udeployedSave status and provide string consts for each state
 // undeployedSave should reset on each page
 const DeployProvider = ({ children }) => {
-  const [undeployedSave, setUndeployedSave] = useState(null); // initial value is null because don't want to disable deploy button on startup since don't know if there was a previously undeployed save
+  const [undeployedSave, setUndeployedSave] = useState(true); // initial value is null because don't want to disable deploy button on startup since don't know if there was a previously undeployed save
   const [isCreatingBuildOrDeploying, setIsCreatingBuildOrDeploying] = useState(
     false
   );
@@ -54,7 +54,6 @@ const DeployProvider = ({ children }) => {
   }, [fetchDeployStatus]);
 
   useLayoutEffect(() => {
-    console.log('deployStatus:', deployStatus);
     if (deployStatus === 'ready') {
       setIsCreatingBuildOrDeploying(false);
     }
@@ -64,10 +63,6 @@ const DeployProvider = ({ children }) => {
     }
   }, [deployStatus]);
 
-  useEffect(() => {
-    if (fetchDeployStatus) console.log('fetchDeployStatus:', fetchDeployStatus);
-  }, [fetchDeployStatus]);
-
   function createSiteBuild() {
     if (deployStatus) {
       resetBuildAndDeploy();
@@ -76,8 +71,10 @@ const DeployProvider = ({ children }) => {
     console.log('CREATING SITE BUILD...');
     setUndeployedSave(false);
     setIsCreatingBuildOrDeploying(true);
-    // const site_id = "d894703e-7258-4219-9edd-4fb05e77d508" // PRODUCTION
-    const site_id = 'cf3b4320-664f-45d5-ba30-fd1e17803b87'; // DEVELOPMENT
+    const site_id =
+      process.env.NODE_ENV === 'development'
+        ? 'cf3b4320-664f-45d5-ba30-fd1e17803b87'
+        : 'd894703e-7258-4219-9edd-4fb05e77d508';
     const client = new NetlifyAPI(
       'W43FJpBK-fIAz1BxbBZB3-zmn6vQn4-3PjEHIXkT-aM'
     );

@@ -1,261 +1,379 @@
-import {
-  useState,
-  useContext,
-  createContext,
-  useEffect,
-  useLayoutEffect,
-} from 'react';
-import axios from 'axios';
+import { useState, useContext, createContext, useEffect } from 'react';
 import Client from 'shopify-buy';
 import produce from 'immer';
+import axios from 'axios';
 
 import { useFetch } from './FetchContext';
+import useAsync from '../hooks/useAsync';
+import {
+  applyCorrectValueAndFlag,
+  filterArr1WithArr2,
+  sortByAscending,
+} from '../utils/processData';
 
 const DataContext = createContext();
 const { Provider } = DataContext;
 
-// api calls should be in useeffect as are side effects!
-function DataProvider({ children }) {
-  const [images, setImages] = useState(null);
-  const [defaultProduct, setDefaultProduct] = useState(null);
-  const [shopHeight, setShopHeight] = useState(null);
-  const [shopifyProducts, setShopifyProducts] = useState(null);
-  const [portfolio, setPortfolio] = useState(null);
-  const [strapiProducts, setStrapiProducts] = useState(null);
-  const [status, setStatus] = useState(null);
-  const [triggerFetch, setTriggerFetch] = useState(false);
+/* TO DO
+  - ensure pages render with data
+  - make saves work
+  - create further abstractions: pageWrapper, processing data, saving, other components
+  - saving -> ui changes
+*/
 
-  const { authFetch } = useFetch();
+/* NOTES
+  - would be good to have the ability to change a portfolio image. Maybe then wouldn't remove imageComponents without image.
+  - async funcs are in useEffects because I read this should be. Is this correct?
+*/
+
+/* NOTES (to keep)
+  - positions/widths etc. don't need to be sorted as they are handled when selected (by selectStyleDataForDevice)
+*/
+
+function DataProvider({ children }) {
+  const [portfolioRoot, setPortfolioRoot] = useState(null);
+  const [strapiProductsRoot, setStrapiProductsRoot] = useState(null);
+  const [shopHeightsRoot, setShopHeightsRoot] = useState(null);
+  const [pressRoot, setPressRoot] = useState(null);
+  const [settingsRoot, setSettingsRoot] = useState(null);
+  const [imagesRoot, setImagesRoot] = useState(null);
+  const [cleanDbToggle, setCleanDbToggle] = useState(true);
+
+  const { authFetch, strapiEndpoints } = useFetch();
+
+  const {
+    res: portfolioRes,
+    status: portfolioFetchStatus,
+    run: runPortfolioFetch,
+    reset: resetPortfolioFetch,
+  } = useAsync();
+
+  const {
+    res: strapiProductsRes,
+    status: strapiProductsFetchStatus,
+    run: runStrapiProductsFetch,
+    reset: resetStrapiProductsFetch,
+  } = useAsync();
+
+  const {
+    res: shopifyProductsData,
+    status: shopifyProductsFetchStatus,
+    run: runShopifyProductsFetch,
+    reset: resetShopifyProductsFetch,
+  } = useAsync();
+
+  const {
+    status: shopHeightsFetchStatus,
+    run: runShopHeightsFetch,
+    reset: resetShopHeightsFetch,
+  } = useAsync();
+
+  const {
+    status: pressFetchStatus,
+    run: runPressFetch,
+    reset: resetPressFetch,
+  } = useAsync();
+
+  const {
+    res: imagesRes,
+    status: imagesFetchStatus,
+    run: runImagesFetch,
+  } = useAsync();
+
+  const {
+    status: settingsFetchStatus,
+    run: runSettingsFetch,
+    reset: resetSettingsFetch,
+  } = useAsync();
+
+  const {
+    res: uploadsRes,
+    status: uploadsFetchStatus,
+    run: runUploadsFetch,
+  } = useAsync();
 
   useEffect(() => {
-    if (triggerFetch && !status) {
-      async function fetchAndCleanAllDataAndRemoveInvalidDataFromDatabase() {
-        console.log('FETCHING INITIAL DATA...');
-        setStatus('pending');
+    if (portfolioFetchStatus === 'idle') {
+      console.log('FETCHING PORTFOLIO AND PROCESSING...');
+      const processData = (res) => {
+        const processedData = produce(res.data, (draft) => {
+          sortByAscending(draft, 'order');
 
-        try {
-          // FETCH DATA
-          const strapiEndpoints = [
-            'portfolio-pages',
-            'products',
-            'shop-home-heights',
-            'default-product',
-            'images',
-            'upload/files',
-          ];
-          const limitParameter = '?_limit=1000000';
-          const strapiResponse = await axios.all(
-            strapiEndpoints.map((endPoint) =>
-              authFetch.get(endPoint + limitParameter)
-            )
-          );
-          const [
-            portfolio,
-            strapiProducts,
-            shopHeight,
-            defaultProduct,
-            allImages,
-            uploads,
-          ] = strapiResponse.map((response) => response.data);
+          draft.forEach((page, i) => {
+            applyCorrectValueAndFlag(page, 'order', i);
 
-          setShopHeight(shopHeight);
-          setDefaultProduct(defaultProduct);
-
-          const shopifyProducts = await fetchShopifyProducts();
-          setShopifyProducts(shopifyProducts);
-
-          // HANDLE INVALID PRODUCTS
-
-          const unusedStrapiProducts = strapiProducts.filter(
-            (strapiProduct) =>
-              !shopifyProducts.find(
-                (shopifyProduct) =>
-                  shopifyProduct.id === strapiProduct.shopifyId
-              )
-          );
-
-          await axios.all(
-            unusedStrapiProducts.map((product) =>
-              authFetch.delete(`products/${product.id}`)
-            )
-          );
-
-          // HANDLE UNUSED IMAGES
-          const portfolioImageIds = portfolio
-            .map((page) =>
-              page.imageComponents.map(
-                (imageComponent) => imageComponent.image.id
-              )
-            )
-            .flat();
-
-          const usedStrapiProducts = strapiProducts.filter((strapiProduct) =>
-            shopifyProducts.find(
-              (shopifyProduct) => shopifyProduct.id === strapiProduct.shopifyId
-            )
-          );
-          const productImageIds = usedStrapiProducts
-            .map((product) =>
-              product.images.map((imageComponent) => imageComponent.image.id)
-            )
-            .flat();
-          const usedImageIds = [
-            ...new Set([...portfolioImageIds, ...productImageIds]),
-          ];
-          const unusedImages = allImages.filter(
-            (image) => !usedImageIds.includes(image.id)
-          );
-
-          await axios.all(
-            unusedImages.map((image) => authFetch.delete(`images/${image.id}`))
-          );
-
-          // HANDLE UNUSED UPLOADS
-
-          const portfolioUploadIds = portfolio
-            .map((page) =>
-              page.imageComponents.map(
-                (imageComponent) => imageComponent.image.image.id
-              )
-            )
-            .flat();
-
-          const productUploadIds = usedStrapiProducts
-            .map((product) =>
-              product.images.map(
-                (imageComponent) => imageComponent.image.image.id
-              )
-            )
-            .flat();
-
-          const usedUploadIds = [
-            ...new Set([...portfolioUploadIds, ...productUploadIds]),
-          ];
-
-          const unusedUploads = uploads.filter(
-            (upload) => !usedUploadIds.includes(upload.id)
-          );
-
-          await axios.all(
-            unusedUploads.map((upload) =>
-              authFetch.delete(`upload/files/${upload.id}`)
-            )
-          );
-
-          // REMOVE INVALID UPLOADS FROM USED UPLOADS
-          const usedUploads = uploads.filter((upload) =>
-            usedUploadIds.includes(upload.id)
-          );
-          const invalidUploads = usedUploads.filter((upload) => !upload.url);
-
-          await axios.all(
-            invalidUploads.map((upload) =>
-              authFetch.delete(`upload/files/${upload.id}`)
-            )
-          );
-
-          // REMOVE INVALID IMAGES FROM USED IMAGES
-          const usedImages = allImages.filter((image) =>
-            usedImageIds.includes(image.id)
-          );
-          const invalidImages = usedImages.filter((image) => !image.image);
-          const validImages = usedImages.filter((image) => image.image);
-
-          setImages(validImages);
-
-          await axios.all(
-            invalidImages.map((image) => authFetch.delete(`images/${image.id}`))
-          );
-
-          // FETCH PORTFOLIO AND PRODUCTS AGAIN
-          const newStrapiResponse = await axios.all([
-            authFetch.get('portfolio-pages'),
-            authFetch.get('products'),
-          ]);
-          const [
-            portfolioWithInvalidImagesRemoved,
-            cleanProducts,
-          ] = newStrapiResponse.map((res) => res.data);
-
-          setStrapiProducts(cleanProducts);
-
-          // REMOVE UNUSED PORTFOLIO PAGES
-          const unusedPortfolioPages = portfolioWithInvalidImagesRemoved.filter(
-            (page) => !page.imageComponents[0]
-          );
-
-          await axios.all(
-            unusedPortfolioPages.map((page) =>
-              authFetch.delete(`portfolio-pages/${page.id}`)
-            )
-          );
-
-          // REORDER PORTFOLIO PAGES
-          const usedPortfolioPages = portfolioWithInvalidImagesRemoved.filter(
-            (page) => page.imageComponents[0]
-          );
-
-          const portfolioReordered = produce(usedPortfolioPages, (draft) => {
-            draft.sort((a, b) => a.order - b.order);
-            draft.forEach((page, i) => {
-              if (page.order !== i + 1) {
-                page.order = i + 1;
-                page.changed = true;
+            const validImgComponents = page.imageComponents.filter(
+              (imgComponent) => {
+                const validImgComponent = imgComponent?.image?.image?.url;
+                if (!validImgComponent) {
+                  page.updated = true;
+                }
+                return validImgComponent;
               }
-            });
+            );
+            sortByAscending(validImgComponents, 'layer');
+            validImgComponents.forEach((imgComponent, i) =>
+              applyCorrectValueAndFlag(imgComponent, 'layer', i, page)
+            );
+            sortByAscending(validImgComponents, 'order');
+            validImgComponents.forEach((imgComponent, i) =>
+              applyCorrectValueAndFlag(imgComponent, 'order', i, page)
+            );
+            page.imageComponents = validImgComponents;
           });
-          const reorderedPages = portfolioReordered.filter(
-            (page) => page.changed
-          );
-          console.log(
-            '🚀 ~ file: DataContext.js ~ line 205 ~ fetchAndCleanAllDataAndRemoveInvalidDataFromDatabase ~ reorderedPages',
-            reorderedPages
-          );
+        });
+        const nonEmptyPages = processedData.filter(
+          (page) => page.imageComponents[0]
+        );
 
-          await axios.all(
-            reorderedPages.map((page) =>
-              authFetch.put(`portfolio-pages/${page.id}`, page)
-            )
-          );
+        setPortfolioRoot(nonEmptyPages);
+      };
 
-          setPortfolio(portfolioReordered);
-
-          setStatus('resolved');
-          setTimeout(() => {
-            setStatus('complete');
-          }, 800);
-        } catch (error) {
-          // should be able to differentiate between errors and allow app to work in sections where possible
-          setStatus('rejected');
-        }
-      }
-      fetchAndCleanAllDataAndRemoveInvalidDataFromDatabase();
+      runPortfolioFetch(authFetch.get(strapiEndpoints.portfolio), processData);
     }
-  }, [triggerFetch, status, authFetch]);
+  }, [
+    authFetch,
+    portfolioFetchStatus,
+    runPortfolioFetch,
+    strapiEndpoints.portfolio,
+  ]);
 
-  async function fetchShopifyProducts() {
-    const shopifyClient = Client.buildClient({
-      storefrontAccessToken: 'aec2e7a9ff50e738535be4a359037f1f',
-      domain: 'amy-jewellery-x.myshopify.com',
-    });
+  useEffect(() => {
+    if (strapiProductsFetchStatus === 'idle') {
+      console.log('FETCHING STRAPI PRODUCTS AND PROCESSING...');
+      const processData = (res) => {
+        const processedData = produce(res.data, (draft) => {
+          draft.forEach((product) => {
+            const validImgComponents = product.images.filter((imgComponent) => {
+              const validImgComponent = imgComponent?.image?.image?.url;
+              if (!validImgComponent) {
+                product.updated = true;
+              }
+              return validImgComponent;
+            });
+            product.images = validImgComponents;
+          });
 
-    return await shopifyClient.product.fetchAll(250);
-  }
+          return draft;
+        });
+        setStrapiProductsRoot(processedData);
+      };
+      runStrapiProductsFetch(
+        authFetch.get(strapiEndpoints.products),
+        processData
+      );
+    }
+  }, [
+    authFetch,
+    strapiProductsFetchStatus,
+    runStrapiProductsFetch,
+    strapiEndpoints.products,
+  ]);
+
+  useEffect(() => {
+    if (shopifyProductsFetchStatus === 'idle') {
+      console.log('FETCHING SHOPIFY PRODUCTS...');
+
+      const shopifyClient = Client.buildClient({
+        storefrontAccessToken: 'aec2e7a9ff50e738535be4a359037f1f',
+        domain: 'amy-jewellery-x.myshopify.com',
+      });
+
+      runShopifyProductsFetch(shopifyClient.product.fetchAll(250));
+    }
+  }, [runShopifyProductsFetch, shopifyProductsFetchStatus]);
+
+  useEffect(() => {
+    if (shopHeightsFetchStatus === 'idle') {
+      console.log('FETCHING SHOP HEIGHTS...');
+      const processData = (res) => setShopHeightsRoot(res.data);
+
+      runShopHeightsFetch(
+        authFetch.get(strapiEndpoints.shopHeights),
+        processData
+      );
+    }
+  }, [
+    authFetch,
+    runShopHeightsFetch,
+    shopHeightsFetchStatus,
+    strapiEndpoints.shopHeights,
+  ]);
+
+  useEffect(() => {
+    if (pressFetchStatus === 'idle') {
+      console.log('FETCHING PRESS AND PROCESSING...');
+      const processData = (res) => {
+        const processedData = produce(res.data, (draft) => {
+          sortByAscending(draft, 'order');
+          draft.forEach((element, i) => {
+            applyCorrectValueAndFlag(element, 'order', i);
+
+            const image = element.image;
+            const validImage = element?.image?.image?.url;
+            if (image && !validImage) {
+              element.image = null;
+              element.updated = true;
+            }
+          });
+        });
+        setPressRoot(processedData);
+      };
+
+      runPressFetch(authFetch.get(strapiEndpoints.press), processData);
+    }
+  }, [authFetch, pressFetchStatus, runPressFetch, strapiEndpoints.press]);
+
+  useEffect(() => {
+    if (settingsFetchStatus === 'idle') {
+      console.log('FETCHING SETTINGS...');
+      const processData = (res) => setSettingsRoot(res.data);
+
+      runSettingsFetch(authFetch.get(strapiEndpoints.shopHeights), processData);
+    }
+  }, [
+    authFetch,
+    runSettingsFetch,
+    settingsFetchStatus,
+    strapiEndpoints.shopHeights,
+  ]);
+
+  useEffect(() => {
+    if (imagesFetchStatus === 'idle') {
+      console.log('FETCHING IMAGES...');
+
+      runImagesFetch(authFetch.get(strapiEndpoints.images));
+    }
+  }, [authFetch, imagesFetchStatus, runImagesFetch, strapiEndpoints.images]);
+
+  useEffect(() => {
+    if (uploadsFetchStatus === 'idle') {
+      console.log('FETCHING UPLOADS...');
+
+      runUploadsFetch(authFetch.get(strapiEndpoints.uploads));
+    }
+  }, [authFetch, runUploadsFetch, strapiEndpoints.uploads, uploadsFetchStatus]);
+
+  useEffect(() => {
+    if (
+      portfolioRoot &&
+      shopifyProductsData &&
+      strapiProductsRoot &&
+      pressRoot
+    ) {
+      // images validity checked in respective content section above
+      const portfolioImages = portfolioRoot
+        .map((page) =>
+          page.imageComponents.map((imgComponent) => imgComponent.image)
+        )
+        .flat();
+      const productImages = strapiProductsRoot
+        .map((product) =>
+          product.images.map((imgComponent) => imgComponent.image)
+        )
+        .flat();
+      const pressImages = pressRoot
+        .filter((element) => element.image)
+        .map((element) => element.image);
+      const usedImages = [portfolioImages, productImages, pressImages].flat();
+
+      setImagesRoot(usedImages);
+    }
+  }, [portfolioRoot, pressRoot, shopifyProductsData, strapiProductsRoot]);
+
+  useEffect(() => {
+    // CLEAN UP DATABASE
+    if (
+      cleanDbToggle &&
+      imagesRoot &&
+      portfolioRoot &&
+      shopifyProductsData &&
+      strapiProductsRoot &&
+      pressRoot &&
+      uploadsRes
+    ) {
+      console.log('CLEANING UP DATABASE...');
+      setCleanDbToggle(false);
+
+      const unusedPortfPages = filterArr1WithArr2(
+        portfolioRes.data,
+        portfolioRoot,
+        'excludes'
+      );
+      const unusedStrapiProducts = filterArr1WithArr2(
+        strapiProductsRes.data,
+        shopifyProductsData,
+        'excludes',
+        'shopifyId'
+      );
+      const unusedImages = filterArr1WithArr2(
+        imagesRes.data,
+        imagesRoot,
+        'excludes'
+      );
+      const unusedUploads = filterArr1WithArr2(
+        uploadsRes.data,
+        imagesRoot.map((image) => image.image)
+      );
+
+      axios.all(
+        [
+          unusedPortfPages.map((page) =>
+            authFetch.delete(`${strapiEndpoints.portfolio}/${page.id}`)
+          ),
+          unusedStrapiProducts.map((product) =>
+            authFetch.delete(`${strapiEndpoints.products}/${product.id}`)
+          ),
+          unusedImages.map((image) =>
+            authFetch.delete(`${strapiEndpoints.images}/${image.id}`)
+          ),
+          unusedUploads.map((upload) =>
+            authFetch.delete(`${strapiEndpoints.uploads}/${upload.id}`)
+          ),
+        ].flat()
+      );
+    }
+  }, [
+    authFetch,
+    cleanDbToggle,
+    imagesRes,
+    imagesRoot,
+    portfolioRes,
+    portfolioRoot,
+    pressRoot,
+    shopifyProductsData,
+    strapiEndpoints,
+    strapiProductsRes,
+    strapiProductsRoot,
+    uploadsRes,
+  ]);
 
   const value = {
-    images,
-    portfolio,
-    strapiProducts,
-    shopifyProducts,
-    shopHeight,
-    defaultProduct,
-    status,
-    fetchData: () => setTriggerFetch(true),
-    setDefaultProduct,
-    setShopHeight,
-    setShopifyProducts,
-    setPortfolio,
-    setStrapiProducts,
+    portfolioRoot,
+    setPortfolioRoot,
+    portfolioFetchStatus,
+    resetPortfolioFetch,
+    strapiProductsRoot,
+    setStrapiProductsRoot,
+    strapiProductsFetchStatus,
+    resetStrapiProductsFetch,
+    shopifyProductsData,
+    shopifyProductsFetchStatus,
+    resetShopifyProductsFetch,
+    shopHeightsRoot,
+    setShopHeightsRoot,
+    shopHeightsFetchStatus,
+    resetShopHeightsFetch,
+    pressRoot,
+    setPressRoot,
+    pressFetchStatus,
+    resetPressFetch,
+    settingsRoot,
+    setSettingsRoot,
+    settingsFetchStatus,
+    resetSettingsFetch,
+    imagesRoot,
+    setImagesRoot,
   };
 
   return <Provider value={value}>{children}</Provider>;
@@ -264,14 +382,6 @@ function DataProvider({ children }) {
 function useData() {
   const context = useContext(DataContext);
   if (!context) throw new Error('useData must be used within the DataProvider');
-
-  const { status, fetchData } = context;
-
-  useLayoutEffect(() => {
-    if (!status) {
-      fetchData();
-    }
-  }, [status, fetchData]);
 
   return context;
 }

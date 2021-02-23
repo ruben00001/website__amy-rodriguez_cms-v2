@@ -2,20 +2,19 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import { faCheckCircle, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useState, useLayoutEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useState } from 'react';
+import { faCheckCircle, faTimes } from '@fortawesome/free-solid-svg-icons';
+
 import { useData } from '../../context/DataContext';
 import usePostImageUpload from '../../hooks/usePostImageUpload';
 import { selectImage } from '../../utils';
-import { button } from './styles';
-
-import { useLayoutEffect } from 'react';
-import ApiRequestOverlay from './ApiRequestOverlay';
+import ApiRequestOverlay from '../common/ApiRequestOverlay';
+import { button } from '../common/styles';
 
 const container = (theme) =>
   css({
-    zIndex: 200,
+    zIndex: 500,
     position: 'fixed',
     top: 0,
     left: 0,
@@ -238,6 +237,10 @@ function AddImagePopup({ show, close, addImage }) {
 
   function handleExistingImage() {
     const newImage = images.find((image) => image.id === selectedImage);
+    console.log(
+      '🚀 ~ file: AddImagePopup.js ~ line 240 ~ handleExistingImage ~ newImage',
+      newImage
+    );
     addImage(newImage);
     closeAndReset();
   }

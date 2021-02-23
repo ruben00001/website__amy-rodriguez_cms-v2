@@ -7,10 +7,15 @@ import { Link } from 'react-router-dom';
 
 import { Rnd } from 'react-rnd';
 
-import { selectImage } from '../../utils';
 import { button } from '../common/styles';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowAltCircleDown,
+  faArrowAltCircleUp,
+  faExternalLinkAlt,
+  faImage,
+} from '@fortawesome/free-solid-svg-icons';
+import Tooltip from '../common/Tooltip';
 
 const controlsContainer = (theme) =>
   css({
@@ -19,12 +24,17 @@ const controlsContainer = (theme) =>
     right: 0,
     transform: 'translateY(-100%)',
     display: 'flex',
+    alignItems: 'center',
     background: theme.colors.midgrey,
-    opacity: 0.7,
+    // opacity: 0.7,
     color: 'white',
     borderRadius: 2.5,
     padding: '2px 8px',
   });
+
+const controlIcon = css({
+  marginLeft: 8,
+});
 
 const productLink = css(button, {
   position: 'absolute',
@@ -33,11 +43,42 @@ const productLink = css(button, {
   background: 'white',
   padding: '3px 8px',
   transition: 'opacity 0.3s ease-in-out',
+  color: 'black',
 });
 
 const hide = css({
   opacity: 0,
 });
+
+const newProductContainer = (theme) =>
+  css({
+    zIndex: 99,
+    border: `1px solid ${theme.colors.lightgrey}`,
+    backgroundColor: theme.colors.lightlightgrey,
+    padding: 20,
+
+    h3: {
+      fontSize: 17,
+      fontVariant: 'small-caps',
+      marginBottom: 20,
+    },
+
+    p: {
+      marginTop: 10,
+      fontSize: 14,
+    },
+  });
+
+const saveMessage = (theme) =>
+  css({
+    position: 'absolute',
+    bottom: 7,
+    backgroundColor: theme.colors.midgrey,
+    color: 'white',
+    fontWeight: 'bold',
+    opacity: 0.8,
+    padding: '2px 4px',
+  });
 
 function RndImage({
   children,
@@ -45,7 +86,13 @@ function RndImage({
   width,
   position,
   setStyleField,
+  moveToBottom,
+  moveToTop,
   showImagePopupForProduct,
+  title,
+  description,
+  readyToBeEdited,
+  shopifyId,
 }) {
   const [hovered, setHovered] = useState(false);
   const [rndActive, setRndActive] = useState(false);
@@ -89,29 +136,62 @@ function RndImage({
       onResizeStart={() => setRndActive(true)}
       onResizeStop={handleResizeStop}
       lockAspectRatio={true}
-      enableResizing={enableResizeProp}
+      enableResizing={imgSrc && enableResizeProp}
       disableDragging={controlsHovered}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <img css={{ width: '100%' }} src={imgSrc} alt="" />
+      {!imgSrc ? (
+        <div css={newProductContainer}>
+          <h3>no images - add image to be able to edit product</h3>
+          <p>
+            <b>Title:</b> {title}
+          </p>
+          <p>
+            <b>Description:</b> {description}
+          </p>
+        </div>
+      ) : (
+        <img css={{ width: '100%' }} src={imgSrc} alt="" />
+      )}
       <div
         css={[controlsContainer, (!hovered || rndActive) && hide]}
         onMouseEnter={() => setControlsHovered(true)}
         onMouseLeave={() => setControlsHovered(false)}
       >
+        <Tooltip message="Move image to bottom of page">
+          <FontAwesomeIcon
+            css={[button, controlIcon]}
+            icon={faArrowAltCircleDown}
+            onClick={moveToBottom}
+          />
+        </Tooltip>
+        <Tooltip message="Move image to top of page">
+          <FontAwesomeIcon
+            css={[button, controlIcon]}
+            icon={faArrowAltCircleUp}
+            onClick={moveToTop}
+          />
+        </Tooltip>
         <FontAwesomeIcon
-          css={button}
+          css={[button, controlIcon]}
           icon={faImage}
           onClick={showImagePopupForProduct}
         />
       </div>
-      <Link
-        css={[productLink, (!hovered || rndActive) && hide]}
-        to={'/portfolio'}
-      >
-        Go to product page
-      </Link>
+      {imgSrc && !readyToBeEdited() && (
+        <p css={saveMessage}>Save to be able to edit product</p>
+      )}
+      {readyToBeEdited() && (
+        <Link
+          css={[productLink, (!hovered || rndActive) && hide]}
+          to={shopifyId}
+          onMouseEnter={() => setControlsHovered(true)}
+          onMouseLeave={() => setControlsHovered(false)}
+        >
+          <FontAwesomeIcon icon={faExternalLinkAlt} />
+        </Link>
+      )}
       {children}
     </Rnd>
   );

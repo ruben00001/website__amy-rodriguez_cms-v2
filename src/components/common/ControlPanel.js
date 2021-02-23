@@ -16,12 +16,13 @@ import { useDeploy } from '../../context/DeployContext';
 import { devices } from '../../constants';
 import { convertToLocalTimeString } from '../../utils';
 import NavigationMenu from './NavigationMenu';
-import { button as defaultButton } from './styles';
+import { button as defaultButton, fetchDisable } from './styles';
 import { forwardRef } from 'react';
+import Tooltip from './Tooltip';
 
 const container = (theme) =>
   css({
-    zIndex: 100,
+    zIndex: 300,
     width: '100%',
     backgroundColor: 'white',
     padding: '15px 20px',
@@ -39,6 +40,7 @@ const navMenuIcon = css(defaultButton, {
 });
 
 const button = css({
+  position: 'relative',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -84,7 +86,13 @@ const deviceSelectContainer = css({
 
 const deviceSelect = css({ height: 17, fontSize: 12, width: 80 });
 
+const undoContainer = css({
+  marginLeft: 'auto',
+  marginRight: 40,
+});
+
 const undoButton = css({
+  position: 'relative',
   display: 'flex',
   alignItems: 'center',
   border: '1px solid black',
@@ -92,8 +100,6 @@ const undoButton = css({
   fontSize: 11,
   height: 27,
   padding: '0 12px',
-  marginLeft: 'auto',
-  marginRight: 40,
   cursor: 'pointer',
   fontVariant: 'small-caps',
 
@@ -169,17 +175,23 @@ const removeDeployInfoButton = css({
   '&:active': { opacity: 1 },
 });
 
+/* NOTES
+  - adding element repeated - should just change text + onClick func
+*/
+
 const ControlPanel = forwardRef(
   (
     {
       position,
       addPage,
       addImage,
+      addPressElement,
       setDevice,
       save,
       isError,
       unsavedChange,
       undoAllChanges,
+      fetchStatus,
     },
     ref
   ) => {
@@ -196,7 +208,10 @@ const ControlPanel = forwardRef(
     } = useDeploy();
 
     return (
-      <div css={[container, { position }]} ref={ref}>
+      <div
+        css={[container, { position }, fetchStatus !== 'idle' && fetchDisable]}
+        ref={ref}
+      >
         {deployStatus && (
           <div css={deployInfoContainer}>
             {(deployStatus === 'enqueued' ||
@@ -276,6 +291,12 @@ const ControlPanel = forwardRef(
               <p>Add Image</p>
             </div>
           )}
+          {addPressElement && (
+            <div css={addItem} onClick={() => addPressElement()}>
+              <FontAwesomeIcon icon={faPlus} css={addIcon} />
+              <p>Add Element</p>
+            </div>
+          )}
           {setDevice && (
             <div css={deviceSelectContainer}>
               <p>select device</p>
@@ -291,36 +312,60 @@ const ControlPanel = forwardRef(
               </select>
             </div>
           )}
-          <div
-            css={[undoButton, !unsavedChange && disableButton]}
-            onClick={undoAllChanges}
-          >
-            <p>undo all changes</p>
-            <FontAwesomeIcon icon={faUndo} />
+          <div css={undoContainer}>
+            <Tooltip
+              message={
+                unsavedChange
+                  ? 'Undo changes since last save'
+                  : 'No changes to undo'
+              }
+            >
+              <div
+                css={[undoButton, !unsavedChange && disableButton]}
+                onClick={undoAllChanges}
+              >
+                <p>undo changes</p>
+                <FontAwesomeIcon icon={faUndo} />
+              </div>
+            </Tooltip>
           </div>
-          <div
-            css={[saveButton, (isError || !unsavedChange) && disableButton]}
-            onClick={save}
+          <Tooltip message="Nothing to save" disable={unsavedChange}>
+            <div
+              css={[saveButton, (isError || !unsavedChange) && disableButton]}
+              onClick={save}
+            >
+              <p>Save</p>
+            </div>
+          </Tooltip>
+          <Tooltip
+            message={
+              undeployedSave ? (
+                <em>Do this at the end of each session</em>
+              ) : (
+                'Nothing to deploy'
+              )
+            }
+            translate={undeployedSave ? -40 : 0}
+            disable={deployStatus !== null && deployStatus !== 'ready'}
           >
-            <p>Save</p>
-          </div>
-          <div
-            css={[
-              deployButton,
-              (undeployedSave === false || isCreatingBuildOrDeploying) &&
-                disableButton,
-            ]}
-            onClick={createSiteBuild}
-          >
-            {isCreatingBuildOrDeploying ? (
-              <p>Deploying...</p>
-            ) : (
-              <React.Fragment>
-                <p>Deploy</p>
-                <FontAwesomeIcon icon={faRocket} css={deployIcon} />
-              </React.Fragment>
-            )}
-          </div>
+            <div
+              css={[
+                deployButton,
+                (undeployedSave === false || isCreatingBuildOrDeploying) &&
+                  disableButton,
+              ]}
+              onClick={createSiteBuild}
+            >
+              {isCreatingBuildOrDeploying ? (
+                <p>Deploying...</p>
+              ) : (
+                <React.Fragment>
+                  <p>Deploy</p>
+                  <FontAwesomeIcon icon={faRocket} css={deployIcon} />
+                </React.Fragment>
+              )}
+            </div>
+          </Tooltip>
         </div>
       </div>
     );

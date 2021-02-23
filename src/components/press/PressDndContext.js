@@ -5,26 +5,17 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import { restrictToParentElement } from '@dnd-kit/modifiers';
 
-function PortfolioLandingDndContext({
-  children,
-  portfolioModified,
-  setPortfolioModified,
-  setUnsavedChange,
-}) {
+function PressDndContext({ children, updateData, setUnsavedChange }) {
   const sensors = useSensors(useSensor(PointerSensor));
 
   function handleDragReorder(event) {
     const { active, over } = event;
 
     if (active.id !== over.id) {
-      setPortfolioModified((items) => {
+      updateData((items) => {
         const oldIndex = items.map((item) => item.id).indexOf(active.id);
         const newIndex = items.map((item) => item.id).indexOf(over.id);
 
@@ -42,14 +33,15 @@ function PortfolioLandingDndContext({
       autoScroll={false}
       modifiers={[restrictToParentElement]}
     >
-      <SortableContext
-        items={portfolioModified.map((page) => page.id)}
+      {children}
+      {/* <SortableContext
+        items={portfolioDataModified.map((page) => page.id)}
         strategy={rectSortingStrategy}
       >
         {children}
-      </SortableContext>
+      </SortableContext> */}
     </DndContext>
   );
 }
 
-export default PortfolioLandingDndContext;
+export default PressDndContext;

@@ -11,4 +11,9 @@ const button = css({
 
 const transitionDurationAndTiming = '0.1s ease-in-out';
 
-export { button, transitionDurationAndTiming };
+const fetchDisable = css({
+  opacity: 0.5,
+  pointerEvents: 'none',
+});
+
+export { button, transitionDurationAndTiming, fetchDisable };

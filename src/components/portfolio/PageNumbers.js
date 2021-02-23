@@ -2,6 +2,7 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
+import { createPlaceholderArray } from '../../utils';
 
 const container = css({
   position: 'absolute',
@@ -30,27 +31,23 @@ const pageNumber = (theme) =>
     color: theme.colors.midgrey,
   });
 
-export function PageNumbers() {
+export function PageNumbers({ numberPages }) {
+  const placeholderArray = createPlaceholderArray(
+    numberPages < 6 ? numberPages - 1 : 5
+  );
+
   return (
     <div css={container}>
-      <div css={pagePlaceholder}>
-        <p css={pageNumber}>page 1</p>
-      </div>
-      <div css={pagePlaceholder}>
-        <p css={pageNumber}>page 2</p>
-      </div>
-      <div css={pagePlaceholder}>
-        <p css={pageNumber}>page 3</p>
-      </div>
-      <div css={pagePlaceholder}>
-        <p css={pageNumber}>page 4</p>
-      </div>
-      <div css={pagePlaceholder}>
-        <p css={pageNumber}>page 5</p>
-      </div>
-      <div css={pagePlaceholder}>
-        <p css={pageNumber}>etc.</p>
-      </div>
+      {placeholderArray.map((_element, i) => (
+        <div css={pagePlaceholder} key={i}>
+          <p css={pageNumber}>page {i + 1}</p>
+        </div>
+      ))}
+      {numberPages > 3 && (
+        <div css={pagePlaceholder}>
+          <p css={pageNumber}>etc.</p>
+        </div>
+      )}
     </div>
   );
 }

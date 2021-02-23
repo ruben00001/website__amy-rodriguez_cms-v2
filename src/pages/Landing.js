@@ -7,7 +7,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-solid-svg-icons';
 
 import Logo from '../components/common/Logo';
-import InitialLoadingDataOverlay from '../components/common/InitialLoadingDataOverlay';
 import { useData } from '../context/DataContext';
 import LogoutButton from '../components/common/LogoutButton';
 
@@ -58,13 +57,13 @@ const shopLink = css({
 });
 
 function Landing() {
-  const { status: dataFetchStatus } = useData();
+  // const { status: dataFetchStatus } = useData();
 
   return (
     <div css={container}>
-      {dataFetchStatus !== 'complete' && (
+      {/* {dataFetchStatus !== 'complete' && (
         <InitialLoadingDataOverlay status={dataFetchStatus} />
-      )}
+      )} */}
 
       <div css={header}>
         <Logo />
@@ -87,6 +86,13 @@ function Landing() {
                 icon={faCircle}
               />
               Shop
+            </Link>
+            <Link css={[link, shopLink]} to="/press">
+              <FontAwesomeIcon
+                style={{ fontSize: 5, marginRight: 12 }}
+                icon={faCircle}
+              />
+              Press
             </Link>
           </div>
         </div>

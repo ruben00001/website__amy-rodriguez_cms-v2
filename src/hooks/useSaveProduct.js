@@ -7,19 +7,22 @@ import { useFetch } from '../context/FetchContext';
 // import { removeTemporaryFieldsFromNewImageComponents } from '../utils';
 import useAsync from './useAsync';
 
-function useSavePortfolioPage(pageId, setUnsavedChange) {
-  const { portfolio, setPortfolio } = useData();
-  const { authFetch } = useFetch();
+function useSaveProduct(setUnsavedChange) {
   const { data, status, run, reset } = useAsync();
+  const { authFetch } = useFetch();
+  const { setStrapiProducts: setStrapiProductsRoot } = useData();
   const { setUndeployedSave } = useDeploy();
 
   useLayoutEffect(() => {
     if (status === 'resolved') {
-      const savedPage = data.data;
-      setPortfolio(
+      console.log(data);
+      setStrapiProductsRoot(
         produce((draft) => {
-          const pageIndex = draft.findIndex((page) => page.id === savedPage.id);
-          draft.splice(pageIndex, 1, savedPage);
+          const updatedProduct = data.data;
+          const draftProductIndex = draft.findIndex(
+            (draftProduct) => draftProduct.id === updatedProduct.id
+          );
+          draft.splice(draftProductIndex, 1, updatedProduct);
         })
       );
 
@@ -38,20 +41,14 @@ function useSavePortfolioPage(pageId, setUnsavedChange) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  function save(imageComponents) {
-    console.log('SAVING PORFTFOLIO PAGE...');
-    // const imageComponentsTempFieldsRemoved = removeTemporaryFieldsFromNewImageComponents(
-    //   imageComponents
-    // );
-    // const pageData = portfolio.find((page) => page.id === pageId);
-    // const updatedPage = produce(pageData, (draft) => {
-    //   draft.imageComponents = imageComponentsTempFieldsRemoved;
+  function save(dataModified) {
+    // const updatedProductProcessed = produce(dataModified, (draft) => {
+    //   draft.images = removeTemporaryFieldsFromNewImageComponents(draft.images);
     // });
-
-    // run(authFetch.put(`portfolio-pages/${pageId}`, updatedPage));
+    // run(authFetch.put(`products/${dataModified.id}`, updatedProductProcessed));
   }
 
   return { save, status };
 }
 
-export default useSavePortfolioPage;
+export default useSaveProduct;

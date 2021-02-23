@@ -61,6 +61,9 @@ function NavigationMenu({ show, close }) {
       <Link css={link} to="/shop">
         Shop
       </Link>
+      <Link css={link} to="/press">
+        Press
+      </Link>
       <LogoutButton />
     </div>
   );

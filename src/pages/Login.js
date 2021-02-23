@@ -15,8 +15,8 @@ import { button } from '../components/common/styles';
 import Input from '../components/login/Input';
 import LoadingBar from '../components/common/LoadingBar';
 import { transitionDurationAndTiming } from '../components/login/styles';
-import { publicFetch } from '../utils/fetch';
 import Logo from '../components/common/Logo';
+import { useFetch } from '../context/FetchContext';
 
 const container = css({
   display: 'flex',
@@ -123,9 +123,15 @@ const transitionRedirectMessage = css({
   transform: 'translateY(0)',
 });
 
+/* NOTES
+  - LocalHost Strapi p'word: Abc123456
+  - localhost frontend p'word: abc123 
+*/
+
 function Login() {
   const [loginStatus, setLoginStatus] = useState(null);
   const [showRedirectMessage, setShowRedirectMessage] = useState(false);
+  const { publicFetch, strapiEndpoints } = useFetch();
   const { isAuthenticated, setAuthState } = useAuth();
   const {
     state: { redirectedFromAuthenticatedRoute } = {
@@ -148,7 +154,7 @@ function Login() {
     const password = e.target.password.value;
     try {
       setLoginStatus('pending');
-      const { data } = await publicFetch.post('auth/local', {
+      const { data } = await publicFetch.post(strapiEndpoints.login, {
         identifier,
         password,
       });

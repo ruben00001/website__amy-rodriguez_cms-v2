@@ -15,7 +15,6 @@ import ControlPanel from '../components/common/ControlPanel';
 import RndImage from '../components/common/RndImage';
 import AddImagePopup from '../components/common/AddImagePopup';
 import useSavePortfolioPage from '../hooks/useSavePortfolioPage';
-import ApiRequestOverlay from '../components/common/ApiRequestOverlay';
 import WarningMessages from '../components/common/WarningMessages';
 import RouterPrompt from '../components/common/RouterPrompt';
 import { button } from '../components/common/styles';
@@ -81,201 +80,200 @@ const portfolioPage = css({
 // save warning before deploy?; or save and deploy option?
 
 function PortfolioPage() {
-  const [imageComponentsModified, setImageComponentsModified] = useState(null);
-  const [controlsBeingUsed, setControlsBeingUsed] = useState(false);
-  const [unsavedChange, setUnsavedChange] = useState(false);
-  const [showAddImagePopup, setShowAddImagePopup] = useState(false);
+  // const [imageComponentsModified, setImageComponentsModified] = useState(null);
+  // const [controlsBeingUsed, setControlsBeingUsed] = useState(false);
+  // const [unsavedChange, setUnsavedChange] = useState(false);
+  // const [showAddImagePopup, setShowAddImagePopup] = useState(false);
 
-  const imageComponentsWithOrderErrorIds = useMemo(() => {
-    if (!imageComponentsModified) {
-      return null;
-    }
-    if (imageComponentsModified.length < 2) {
-      return null;
-    }
+  // const imageComponentsWithOrderErrorIds = useMemo(() => {
+  //   if (!imageComponentsModified) {
+  //     return null;
+  //   }
+  //   if (imageComponentsModified.length < 2) {
+  //     return null;
+  //   }
 
-    const componentsWithErrorIds = [];
-    const componentsSorted = produce(imageComponentsModified, (draft) =>
-      draft.sort(sortByAscendingOrder)
-    );
-    for (let i = 0; i < componentsSorted.length; i++) {
-      const order = componentsSorted[i].order;
-      const nextOrder = componentsSorted[i + 1]?.order;
-      if (!nextOrder) break;
-      if (order === nextOrder) {
-        componentsWithErrorIds.push(componentsSorted[i].id);
-        componentsWithErrorIds.push(componentsSorted[i + 1].id);
-        i++; // i++ definitely works?
-      }
-    }
+  //   const componentsWithErrorIds = [];
+  //   const componentsSorted = produce(imageComponentsModified, (draft) =>
+  //     draft.sort(sortByAscendingOrder)
+  //   );
+  //   for (let i = 0; i < componentsSorted.length; i++) {
+  //     const order = componentsSorted[i].order;
+  //     const nextOrder = componentsSorted[i + 1]?.order;
+  //     if (!nextOrder) break;
+  //     if (order === nextOrder) {
+  //       componentsWithErrorIds.push(componentsSorted[i].id);
+  //       componentsWithErrorIds.push(componentsSorted[i + 1].id);
+  //       i++; // i++ definitely works?
+  //     }
+  //   }
 
-    return componentsWithErrorIds;
-  }, [imageComponentsModified]);
+  //   return componentsWithErrorIds;
+  // }, [imageComponentsModified]);
 
-  // SET UP DATA
+  // // SET UP DATA
 
-  const [deviceNum, setDeviceNum] = useState(0);
-  const device = useMemo(() => devices[deviceNum], [deviceNum]);
+  // const [deviceNum, setDeviceNum] = useState(0);
+  // const device = useMemo(() => devices[deviceNum], [deviceNum]);
 
-  const { portfolio: portfolioDataRoot } = useData();
-  const { pageId: pageIdString } = useParams();
-  const pageIdNumber = useMemo(() => Number(pageIdString), [pageIdString]);
+  // const { portfolio: portfolioDataRoot } = useData();
+  // const { pageId: pageIdString } = useParams();
+  // const pageIdNumber = useMemo(() => Number(pageIdString), [pageIdString]);
 
-  const imageComponentsRootProcessed = useMemo(() => {
-    const pageData = portfolioDataRoot.find((page) => page.id === pageIdNumber);
-    const imageComponentsRoot = pageData.imageComponents;
+  // const imageComponentsRootProcessed = useMemo(() => {
+  //   const pageData = portfolioDataRoot.find((page) => page.id === pageIdNumber);
+  //   const imageComponentsRoot = pageData.imageComponents;
 
-    return produce(imageComponentsRoot, (draft) => {
-      draft.sort((a, b) => a.order - b.order);
-      draft.forEach((component, i) => {
-        component.order = i + 1;
-      });
-    });
-  }, [pageIdNumber, portfolioDataRoot]);
+  //   return produce(imageComponentsRoot, (draft) => {
+  //     draft.sort((a, b) => a.order - b.order);
+  //     draft.forEach((component, i) => {
+  //       component.order = i + 1;
+  //     });
+  //   });
+  // }, [pageIdNumber, portfolioDataRoot]);
 
-  const bodyRef = useRef();
-  const { width: canvasWidth, height: canvasHeight } = useCanvasSize({
-    parentWidth: bodyRef.current?.offsetWidth,
-    parentHeight: bodyRef.current?.offsetHeight,
-    device: devices[deviceNum],
-  });
+  // const bodyRef = useRef();
+  // const { width: canvasWidth, height: canvasHeight } = useCanvasSize({
+  //   parentWidth: bodyRef.current?.offsetWidth,
+  //   parentHeight: bodyRef.current?.offsetHeight,
+  //   device,
+  // });
 
-  const { save, status: saveStatus } = useSavePortfolioPage(
-    pageIdNumber,
-    setUnsavedChange
-  );
+  // const { save, status: saveStatus } = useSavePortfolioPage(
+  //   pageIdNumber,
+  //   setUnsavedChange
+  // );
 
-  useLayoutEffect(() => {
-    console.log(
-      '🚀 ~ file: PortfolioPage.js ~ line 122 ~ useLayoutEffect ~ imageComponentsRootProcessed',
-      imageComponentsRootProcessed
-    );
-    setImageComponentsModified(imageComponentsRootProcessed);
-  }, [imageComponentsRootProcessed]);
+  // useLayoutEffect(() => {
+  //   console.log(
+  //     '🚀 ~ file: PortfolioPage.js ~ line 122 ~ useLayoutEffect ~ imageComponentsRootProcessed',
+  //     imageComponentsRootProcessed
+  //   );
+  //   setImageComponentsModified(imageComponentsRootProcessed);
+  // }, [imageComponentsRootProcessed]);
 
-  // HELPER FUNCTIONS
+  // // HELPER FUNCTIONS
 
-  function selectStyleComponentAndCalcValue(styleType, components) {
-    const component = selectStyleDataForDevice(components, device);
-    if (styleType === 'position') {
-      return {
-        x: calcPercentageValue(component.x, canvasWidth),
-        y: calcPercentageValue(component.y, canvasHeight),
-      };
-    }
-    if (styleType === 'width') {
-      return component.value;
-    }
-  }
+  // function selectStyleComponentAndCalcValue(styleType, components) {
+  //   const component = selectStyleDataForDevice(components, device);
+  //   if (styleType === 'position') {
+  //     return {
+  //       x: calcPercentageValue(component.x, canvasWidth),
+  //       y: calcPercentageValue(component.y, canvasHeight),
+  //     };
+  //   }
+  //   if (styleType === 'width') {
+  //     return component.value;
+  //   }
+  // }
 
-  // UPDATE MODIFIED DATA
+  // // UPDATE MODIFIED DATA
 
-  function setImageComponentStyleField(imageComponentId, field, newValue) {
-    setImageComponentsModified(
-      produce((draft) => {
-        const imageComponent = draft.find(
-          (component) => component.id === imageComponentId
-        );
-        const styleComponents = imageComponent[field];
-        const currentStyleComponentForDevice = selectStyleDataForDevice(
-          styleComponents,
-          device
-        );
+  // function setImageComponentStyleField(imageComponentId, field, newValue) {
+  //   setImageComponentsModified(
+  //     produce((draft) => {
+  //       const imageComponent = draft.find(
+  //         (component) => component.id === imageComponentId
+  //       );
+  //       const styleComponents = imageComponent[field];
+  //       const currentStyleComponentForDevice = selectStyleDataForDevice(
+  //         styleComponents,
+  //         device
+  //       );
 
-        if (device.aspectRatio === currentStyleComponentForDevice.aspectRatio) {
-          const styleComponentIndex = styleComponents.findIndex(
-            (value) =>
-              value.aspectRatio === currentStyleComponentForDevice.aspectRatio
-          );
-          styleComponents.splice(styleComponentIndex, 1);
-        }
+  //       if (device.aspectRatio === currentStyleComponentForDevice.aspectRatio) {
+  //         const styleComponentIndex = styleComponents.findIndex(
+  //           (value) =>
+  //             value.aspectRatio === currentStyleComponentForDevice.aspectRatio
+  //         );
+  //         styleComponents.splice(styleComponentIndex, 1);
+  //       }
 
-        const newStyleComponent = {
-          aspectRatio: device.aspectRatio,
-        };
-        if (field === 'positions') {
-          newStyleComponent.x = convertValueToPercent(newValue.x, canvasWidth);
-          newStyleComponent.y = convertValueToPercent(newValue.y, canvasHeight);
-        }
-        if (field === 'widths') {
-          newStyleComponent.value = newValue;
-        }
+  //       const newStyleComponent = {
+  //         aspectRatio: device.aspectRatio,
+  //       };
+  //       if (field === 'positions') {
+  //         newStyleComponent.x = convertValueToPercent(newValue.x, canvasWidth);
+  //         newStyleComponent.y = convertValueToPercent(newValue.y, canvasHeight);
+  //       }
+  //       if (field === 'widths') {
+  //         newStyleComponent.value = newValue;
+  //       }
 
-        styleComponents.push(newStyleComponent);
-        styleComponents.sort((a, b) => b.aspectRatio - a.aspectRatio);
-      })
-    );
-    setUnsavedChange(true);
-  }
+  //       styleComponents.push(newStyleComponent);
+  //       styleComponents.sort((a, b) => b.aspectRatio - a.aspectRatio);
+  //     })
+  //   );
+  //   setUnsavedChange(true);
+  // }
 
-  function setImageComponentHierarchyField(imageComponentId, field, newValue) {
-    setImageComponentsModified(
-      produce((draft) => {
-        const imageComponent = draft.find(
-          (component) => component.id === imageComponentId
-        );
-        imageComponent[field] = newValue;
-      })
-    );
-    setUnsavedChange(true);
-  }
+  // function setImageComponentHierarchyField(imageComponentId, field, newValue) {
+  //   setImageComponentsModified(
+  //     produce((draft) => {
+  //       const imageComponent = draft.find(
+  //         (component) => component.id === imageComponentId
+  //       );
+  //       imageComponent[field] = newValue;
+  //     })
+  //   );
+  //   setUnsavedChange(true);
+  // }
 
-  function addImage(image) {
-    setImageComponentsModified((imageComponents) => {
-      const newComponent = createDefaultImageComponent({
-        imageComponents,
-        image,
-        device,
-        page: 'portfolio',
-      });
+  // function addImage(image) {
+  //   setImageComponentsModified((imageComponents) => {
+  //     const newComponent = createDefaultImageComponent({
+  //       imageComponents,
+  //       image,
+  //       device,
+  //       page: 'portfolio',
+  //     });
 
-      return [...imageComponents, newComponent];
-    });
-    setUnsavedChange(true);
-  }
+  //     return [...imageComponents, newComponent];
+  //   });
+  //   setUnsavedChange(true);
+  // }
 
-  function deleteImage(componentToDeleteId) {
-    function payload() {
-      setImageComponentsModified(
-        produce((draft) => {
-          const deleteIndex = draft.findIndex(
-            (component) => component.id === componentToDeleteId
-          );
-          draft.splice(deleteIndex, 1);
-          // automatically update ordrs to prevent bug with imageControls.js
-          draft.sort((a, b) => a.order - b.order);
-          draft.forEach((component, i) => {
-            component.order = i + 1;
+  // function deleteImage(componentToDeleteId) {
+  //   function payload() {
+  //     setImageComponentsModified(
+  //       produce((draft) => {
+  //         const deleteIndex = draft.findIndex(
+  //           (component) => component.id === componentToDeleteId
+  //         );
+  //         draft.splice(deleteIndex, 1);
+  //         // automatically update orders so user doesn't have to do manually and to prevent bug with imageControls.js
+  //         draft.sort((a, b) => a.order - b.order);
+  //         draft.forEach((component, i) => {
+  //           component.order = i + 1;
 
-            if (component.layer > draft.length) {
-              component.layer = draft.length;
-            }
-          });
-        })
-      );
-      setControlsBeingUsed(null); // component removed without reset leads to other image components not being usable
-      setUnsavedChange(true);
-    }
-    const confirmMessage = 'Are you sure you want to delete this image?';
+  //           if (component.layer > draft.length) {
+  //             component.layer = draft.length;
+  //           }
+  //         });
+  //       })
+  //     );
+  //     setControlsBeingUsed(null); // component removed without reset leads to other image components not being usable
+  //     setUnsavedChange(true);
+  //   }
+  //   const confirmMessage = 'Are you sure you want to delete this image?';
 
-    confirmWrapper(confirmMessage, payload);
-  }
+  //   confirmWrapper(confirmMessage, payload);
+  // }
 
-  function undoAllChanges() {
-    function payload() {
-      setImageComponentsModified(imageComponentsRootProcessed);
-      setUnsavedChange(false);
-    }
-    const confirmMessage =
-      'Any unsaved work will be lost. Are you sure you want to undo all changes?';
+  // function undoAllChanges() {
+  //   function payload() {
+  //     setImageComponentsModified(imageComponentsRootProcessed);
+  //     setUnsavedChange(false);
+  //   }
+  //   const confirmMessage =
+  //     'Any unsaved work will be lost. Are you sure you want to undo all changes?';
 
-    confirmWrapper(confirmMessage, payload);
-  }
+  //   confirmWrapper(confirmMessage, payload);
+  // }
 
   return (
     <div css={container}>
-      <ApiRequestOverlay status={saveStatus} />
-      <ControlPanel
+      {/* <ControlPanel
         position="static"
         setDevice={setDeviceNum}
         addImage={() => setShowAddImagePopup(true)}
@@ -291,9 +289,6 @@ function PortfolioPage() {
         show={showAddImagePopup}
         close={() => setShowAddImagePopup(false)}
         addImage={addImage}
-        setImageComponentsModified={setImageComponentsModified}
-        setUnsavedChange={setUnsavedChange}
-        device={devices[deviceNum]}
       />
       <div css={body} ref={bodyRef}>
         <Link css={backButton} to={'/portfolio'}>
@@ -364,7 +359,7 @@ function PortfolioPage() {
           </div>
         )}
       </div>
-      <RouterPrompt unsavedChange={unsavedChange} />
+      <RouterPrompt unsavedChange={unsavedChange} /> */}
     </div>
   );
 }

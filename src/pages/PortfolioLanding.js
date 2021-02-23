@@ -7,17 +7,19 @@ import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom';
 import produce from 'immer';
 
 import { useData } from '../context/DataContext';
-import InitialLoadingDataOverlay from '../components/common/InitialLoadingDataOverlay';
+import useSavePortfolio from '../hooks/useSavePortfolio';
+import { createTemporaryUniqueId, scrollToBottom } from '../utils';
+import LoadingOverlay from '../components/common/LoadingOverlay';
 import ControlPanel from '../components/common/ControlPanel';
 import OverviewPage from '../components/portfolio/OverviewPage';
 import { PageNumbers } from '../components/portfolio/PageNumbers';
 import PortfolioPage from './PortfolioPage';
-import ApiRequestOverlay from '../components/common/ApiRequestOverlay';
-import useSavePortfolio from '../hooks/useSavePortfolio';
-import { createTemporaryUniqueId, scrollToBottom } from '../utils';
 import PortfolioLandingDndContext from '../components/portfolio/PortfolioLandingDndContext';
 import useLeavePageWarning from '../hooks/useLeavePageWarning';
 import RouterPrompt from '../components/common/RouterPrompt';
+import LoadingBar from '../components/common/LoadingBar';
+import { fetchDisable } from '../components/common/styles';
+import Settings from '../components/common/Settings';
 
 const container = css({
   minHeight: '100vh',
@@ -38,26 +40,28 @@ const body = (theme) =>
   });
 
 function PortfolioLanding() {
-  const [portfolioDataModified, setPortfolioDataModified] = useState(null);
+  const [portfolioModified, setPortfolioModified] = useState([]);
   const [unsavedChange, setUnsavedChange] = useState(false);
 
   const {
-    status: rootDataFetchStatus,
-    portfolio: portfolioDataRoot,
+    portfolioRoot,
+    portfolioFetchStatus,
+    updatePortfolioRoot,
+    resetPortfolioFetch,
   } = useData();
 
   useLayoutEffect(() => {
-    if (portfolioDataRoot) {
-      setPortfolioDataModified(portfolioDataRoot);
+    if (portfolioRoot) {
+      setPortfolioModified(portfolioRoot);
     }
-  }, [portfolioDataRoot]);
+  }, [portfolioRoot]);
 
   useLeavePageWarning(unsavedChange);
 
   const { save, status: saveStatus } = useSavePortfolio(setUnsavedChange);
 
   function addPage() {
-    setPortfolioDataModified(
+    setPortfolioModified(
       produce((draft) => {
         const newPageId = createTemporaryUniqueId(draft);
         const newPageComponent = {
@@ -78,7 +82,7 @@ function PortfolioLanding() {
       'Are you sure you want to delete this page?'
     );
     if (confirmRes) {
-      setPortfolioDataModified(
+      setPortfolioModified(
         produce((draft) => {
           const pageToDeleteId = id;
           const pageToDeleteIndex = draft.findIndex(
@@ -96,33 +100,37 @@ function PortfolioLanding() {
       'Any unsaved work will be lost. Are you sure you want to undo all changes?'
     );
     if (confirmRes) {
-      setPortfolioDataModified(portfolioDataRoot);
+      setPortfolioModified(portfolioRoot);
       setUnsavedChange(false);
     }
   }
 
   return (
     <div css={container}>
-      {rootDataFetchStatus !== 'complete' && (
-        <InitialLoadingDataOverlay status={rootDataFetchStatus} />
+      {portfolioFetchStatus !== 'complete' && (
+        <LoadingOverlay
+          page="portfolio"
+          fetchStatus={portfolioFetchStatus}
+          fetchData={resetPortfolioFetch}
+        />
       )}
-      {/* probs shouldn't have multiple overlays */}
-      <ApiRequestOverlay status={saveStatus} />
+      {/* <LoadingBar status={saveStatus} /> */}
       <ControlPanel
         position="fixed"
         addPage={addPage}
-        save={() => save(portfolioDataModified)}
+        save={() => save(portfolioModified)}
         unsavedChange={unsavedChange}
         undoAllChanges={undoAllChanges}
+        fetchStatus={saveStatus}
       />
-      {portfolioDataModified && (
+      {portfolioModified && (
         <PortfolioLandingDndContext
-          portfolioDataModified={portfolioDataModified}
-          setPortfolioDataModified={setPortfolioDataModified}
+          portfolioModified={portfolioModified}
+          setPortfolioModified={setPortfolioModified}
           setUnsavedChange={setUnsavedChange}
         >
-          <div css={body}>
-            {portfolioDataModified.map((page) => (
+          <div css={[body, saveStatus !== 'idle' && fetchDisable]}>
+            {portfolioModified.map((page) => (
               <OverviewPage
                 data={page}
                 deletePage={() => deletePage(page.id)}
@@ -130,10 +138,13 @@ function PortfolioLanding() {
                 key={page.id}
               />
             ))}
-            <PageNumbers />
+            {portfolioModified.length > 3 && (
+              <PageNumbers numberPages={portfolioModified.length} />
+            )}
           </div>
         </PortfolioLandingDndContext>
       )}
+      {/* <Settings /> */}
       <RouterPrompt unsavedChange={unsavedChange} />
     </div>
   );
@@ -141,14 +152,14 @@ function PortfolioLanding() {
 
 function Portfolio() {
   const { path } = useRouteMatch();
-  const { portfolio: portfolioDataRoot } = useData();
+  const { portfolioRoot } = useData();
 
   return (
     <Switch>
       <Route exact path={path}>
         <PortfolioLanding />
       </Route>
-      {portfolioDataRoot && (
+      {portfolioRoot && (
         <Route path={`${path}/:pageId`}>
           <PortfolioPage />
         </Route>

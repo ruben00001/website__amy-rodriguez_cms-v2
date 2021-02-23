@@ -12,8 +12,9 @@ import { FourOFour, Landing, Login, Portfolio, Product, Shop } from './pages';
 import { globalCSSTheme } from './emotion/themes';
 import { GlobalCSS } from './emotion/GlobalCSS';
 import { FetchProvider } from './context/FetchContext';
-import { DataProvider } from './context/DataContext';
+import { DataProvider, useData } from './context/DataContext';
 import { DeployProvider } from './context/DeployContext';
+import Press from './pages/Press';
 
 const AuthenticatedRoute = ({ children, ...rest }) => {
   const { isAuthenticated } = useAuth();
@@ -37,6 +38,8 @@ const AuthenticatedRoute = ({ children, ...rest }) => {
 };
 
 function AppRoutes() {
+  const { shopifyProducts } = useData();
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Switch>
@@ -52,8 +55,14 @@ function AppRoutes() {
         <AuthenticatedRoute path="/shop">
           <Shop />
         </AuthenticatedRoute>
-        <AuthenticatedRoute path="/product">
-          <Product />
+        {shopifyProducts &&
+          shopifyProducts.map((product) => (
+            <AuthenticatedRoute path={`/${product.id}`} key={product.id}>
+              <Product shopifyData={product} />
+            </AuthenticatedRoute>
+          ))}
+        <AuthenticatedRoute path="/press">
+          <Press />
         </AuthenticatedRoute>
         <Route path="*">
           <FourOFour />
