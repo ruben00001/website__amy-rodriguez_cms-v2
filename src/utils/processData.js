@@ -1,22 +1,10 @@
 import produce from 'immer';
+import { sortByAscending, filterResponses } from '.';
 
-const filterReordered = (components) =>
-  produce(components, (draft) =>
-    draft.filter((component, i) => !component.new && component.order !== i + 1)
-  );
-
-const filterResponses = (responses, method) =>
-  responses.filter((response) => response.config.method === method);
-
-const filterArr1WithArr2 = (arr1, arr2, filterType, arr1IdField = 'id') => {
-  // 4th arg might not be used (check after save in shop)
-  const arr2Ids = arr2.map((element) => element.id);
-  return arr1.filter((element) =>
-    filterType === 'includes'
-      ? arr2Ids.includes(element[arr1IdField])
-      : !arr2Ids.includes(element[arr1IdField])
-  );
-};
+// const filterReordered = (components) =>
+//   produce(components, (draft) =>
+//     draft.filter((component, i) => !component.new && component.order !== i + 1)
+//   );
 
 const applyCorrectValueAndFlag = (component, field, index, componentToFlag) => {
   // componentToFlag gets used for Portfolio + Product image components
@@ -29,22 +17,8 @@ const applyCorrectValueAndFlag = (component, field, index, componentToFlag) => {
   }
 };
 
-// const applyCorrectOrderAndFlag = (component, index, componentToFlag) => {
-//   // componentToFlag gets used for Portfolio + Product image components
-//   if (component.order !== index + 1) {
-//     component.order = index + 1;
-
-//     componentToFlag
-//       ? (componentToFlag.updated = true)
-//       : (component.updated = true);
-//   }
-// };
-
-const sortByAscending = (components, field) =>
-  components.sort((a, b) => a[field] - b[field]);
-
-const rmTempFields = (imageComponents) =>
-  produce(imageComponents, (draft) =>
+const rmTempFields = (components) =>
+  produce(components, (draft) =>
     draft.forEach((component) => {
       if (component.new) {
         delete component.new;
@@ -56,13 +30,32 @@ const rmTempFields = (imageComponents) =>
     })
   );
 
+function processSaveResData(responses, setRootData) {
+  const postResponses = filterResponses(responses, 'post');
+  const putResponses = filterResponses(responses, 'put');
+  const deleteResponses = filterResponses(responses, 'delete');
+
+  setRootData(
+    produce((draft) => {
+      postResponses.forEach((res) => draft.push(res.data));
+      putResponses.forEach((res) => {
+        const data = res.data;
+        const draftIndex = draft.findIndex((element) => element.id === data.id);
+        draft.splice(draftIndex, 1, data);
+      });
+      deleteResponses.forEach((res) => {
+        const data = res.data;
+        const draftIndex = draft.findIndex((element) => element.id === data.id);
+        draft.splice(draftIndex, 1);
+      });
+      sortByAscending(draft, 'order');
+    })
+  );
+}
+
 export {
   rmTempFields,
-  filterReordered,
-  filterResponses,
-  filterArr1WithArr2,
-  // rmInvalidImgComponentsAndFlag,
-  // sortByAscendingOrder,
-  sortByAscending,
+  // filterReordered,
   applyCorrectValueAndFlag,
+  processSaveResData,
 };

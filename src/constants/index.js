@@ -9,7 +9,7 @@ const devices = [
   { name: 'iPhone X', aspectRatio: 0.47, num: 47, dem: 100, width: 375 },
 ];
 
-const defaultProductMoveableComponentFields = {
+const defaultProductValues = {
   addToCartButton: {
     positions: [{ aspectRatio: 1.8, x: 70, y: 72 }],
     fontSizes: [{ aspectRatio: 1.8, value: 20 }],
@@ -36,6 +36,7 @@ const defaultProductMoveableComponentFields = {
     fontSizes: [{ aspectRatio: 1.8, value: 20 }],
     fontWeights: [{ aspectRatio: 1.8, value: 400 }],
   },
+  textAlignmentPosition: [{ aspectRatio: 1.8, value: 60 }],
 };
 
-export { devices, defaultProductMoveableComponentFields };
+export { devices, defaultProductValues };

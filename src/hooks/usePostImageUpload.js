@@ -1,13 +1,16 @@
-import { useReducer } from 'react';
+import { useMemo, useReducer } from 'react';
 import { useFetch } from '../context/FetchContext';
 
-function asyncReducer(_, action) {
+function asyncReducer(state, action) {
   switch (action.type) {
     case 'pending': {
       return { status: 'pending', data: null, error: null };
     }
     case 'resolved': {
       return { status: 'resolved', data: action.data, error: null };
+    }
+    case 'complete': {
+      return { ...state, status: 'complete' };
     }
     case 'rejected': {
       return { status: 'rejected', data: null, error: action.error };
@@ -30,12 +33,7 @@ function usePostImageUpload() {
 
   const { authFetch, authFormFetch } = useFetch();
 
-  function reset() {
-    dispatch({ type: 'idle' });
-  }
-
   async function run(formData) {
-    console.log('running post image upload...');
     dispatch({ type: 'pending' });
     try {
       const postImageResponse = await authFetch.post('/images');
@@ -44,10 +42,6 @@ function usePostImageUpload() {
       formData.append('refId', newImageId);
 
       const uploadResponse = await authFormFetch.post('/upload', formData);
-      console.log(
-        '🚀 ~ file: usePostImageUpload.js ~ line 47 ~ run ~ uploadResponse',
-        uploadResponse
-      );
 
       const newImageWithUpload = {
         ...postImageResponse.data,
@@ -55,18 +49,31 @@ function usePostImageUpload() {
       };
 
       dispatch({ type: 'resolved', data: newImageWithUpload });
+
       setTimeout(() => {
-        reset();
-      }, 500);
+        dispatch({
+          type: 'complete',
+        });
+      }, 700);
     } catch (error) {
       dispatch({ type: 'rejected', error });
       setTimeout(() => {
-        reset();
-      }, 1500);
+        dispatch({
+          type: 'complete',
+        });
+      }, 1800);
     }
   }
 
-  return { ...state, run };
+  const isActive = useMemo(
+    () =>
+      state.status === 'pending' ||
+      state.status === 'resolved' ||
+      state.status === 'rejected',
+    [state.status]
+  );
+
+  return { ...state, run, isActive };
 }
 
 export default usePostImageUpload;

@@ -3,62 +3,61 @@
 
 import { jsx, css } from '@emotion/react';
 import { useLayoutEffect, useState } from 'react';
-import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom';
 import produce from 'immer';
 
 import { useData } from '../context/DataContext';
-import useSavePortfolio from '../hooks/useSavePortfolio';
-import { createTemporaryUniqueId, scrollToBottom } from '../utils';
-import LoadingOverlay from '../components/common/LoadingOverlay';
-import ControlPanel from '../components/common/ControlPanel';
-import OverviewPage from '../components/portfolio/OverviewPage';
-import { PageNumbers } from '../components/portfolio/PageNumbers';
-import PortfolioPage from './PortfolioPage';
-import PortfolioLandingDndContext from '../components/portfolio/PortfolioLandingDndContext';
-import useLeavePageWarning from '../hooks/useLeavePageWarning';
-import RouterPrompt from '../components/common/RouterPrompt';
-import LoadingBar from '../components/common/LoadingBar';
-import { fetchDisable } from '../components/common/styles';
-import Settings from '../components/common/Settings';
+import {
+  ContentPageProvider,
+  useContentPage,
+} from '../context/ContentPageContext';
+
+import {
+  filterNew,
+  filterUpdated,
+  filterArr1WithArr2,
+  scrollToBottom,
+} from '../utils';
+import {
+  confirmWrapper,
+  createTemporaryUniqueId,
+} from '../utils/contentPageUtils';
+import {
+  applyCorrectValueAndFlag,
+  processSaveResData,
+  rmTempFields,
+} from '../utils/processData';
+
+import ContentPageWrapper from '../components/common/ContentPageWrapper';
+import SortableDndContext from '../components/common/SortableDndContext';
+import SortableElement from '../components/common/SortableElement';
+import PortfolioElement from '../components/portfolio-landing/PortfolioElement';
+import PageNumbers from '../components/portfolio-landing/PageNumbers';
 
 const container = css({
-  minHeight: '100vh',
   display: 'flex',
-  flexDirection: 'column',
+  justifyContent: 'space-evenly',
+  alignContent: 'flex-start',
+  flexWrap: 'wrap',
+  padding: '10vh 0 5vh',
+  overflowX: 'hidden',
 });
 
-const body = (theme) =>
-  css({
-    display: 'flex',
-    justifyContent: 'space-evenly',
-    alignContent: 'flex-start',
-    backgroundColor: theme.colors.verylightgrey,
-    flexGrow: 1,
-    flexWrap: 'wrap',
-    padding: '10vh 0 5vh',
-    overflowX: 'hidden',
-  });
+/* NOTES
+    - routes should be seperate? In own folder/app.js
+  */
 
-function PortfolioLanding() {
+function Content() {
   const [portfolioModified, setPortfolioModified] = useState([]);
-  const [unsavedChange, setUnsavedChange] = useState(false);
 
-  const {
-    portfolioRoot,
-    portfolioFetchStatus,
-    updatePortfolioRoot,
-    resetPortfolioFetch,
-  } = useData();
+  const { setUnsavedChange, handleSave, mapFetches } = useContentPage();
+
+  const { portfolioRoot } = useData();
 
   useLayoutEffect(() => {
-    if (portfolioRoot) {
-      setPortfolioModified(portfolioRoot);
+    if (portfolioRoot.data) {
+      setPortfolioModified(portfolioRoot.data);
     }
-  }, [portfolioRoot]);
-
-  useLeavePageWarning(unsavedChange);
-
-  const { save, status: saveStatus } = useSavePortfolio(setUnsavedChange);
+  }, [portfolioRoot.data]);
 
   function addPage() {
     setPortfolioModified(
@@ -78,10 +77,7 @@ function PortfolioLanding() {
   }
 
   function deletePage(id) {
-    const confirmRes = window.confirm(
-      'Are you sure you want to delete this page?'
-    );
-    if (confirmRes) {
+    confirmWrapper('delete', () => {
       setPortfolioModified(
         produce((draft) => {
           const pageToDeleteId = id;
@@ -91,82 +87,89 @@ function PortfolioLanding() {
           draft.splice(pageToDeleteIndex, 1);
         })
       );
-    }
-    setUnsavedChange(true);
+      setUnsavedChange(true);
+    });
   }
 
-  function undoAllChanges() {
-    const confirmRes = window.confirm(
-      'Any unsaved work will be lost. Are you sure you want to undo all changes?'
-    );
-    if (confirmRes) {
-      setPortfolioModified(portfolioRoot);
+  function undoChanges() {
+    confirmWrapper('undo', () => {
+      setPortfolioModified(portfolioRoot.data);
       setUnsavedChange(false);
+    });
+  }
+
+  function save() {
+    function handleSaveResponse(responses) {
+      processSaveResData(responses, portfolioRoot.setData);
     }
+
+    const processedElements = produce(portfolioModified, (draft) => {
+      draft.forEach((element, i) =>
+        applyCorrectValueAndFlag(element, 'order', i)
+      );
+    });
+
+    const newElements = filterNew(processedElements);
+    const newElementsProcessed = rmTempFields(newElements);
+    const updatedElements = filterUpdated(processedElements);
+    const updatedElementsProcessed = rmTempFields(updatedElements);
+    const deletedElements = filterArr1WithArr2(
+      portfolioRoot.data,
+      portfolioModified,
+      'excludes'
+    );
+
+    handleSave(
+      [
+        mapFetches(newElementsProcessed, 'post', 'portfolio'),
+        mapFetches(updatedElementsProcessed, 'put', 'portfolio'),
+        mapFetches(deletedElements, 'delete', 'portfolio'),
+      ],
+      handleSaveResponse
+    );
   }
 
   return (
-    <div css={container}>
-      {portfolioFetchStatus !== 'complete' && (
-        <LoadingOverlay
-          page="portfolio"
-          fetchStatus={portfolioFetchStatus}
-          fetchData={resetPortfolioFetch}
-        />
-      )}
-      {/* <LoadingBar status={saveStatus} /> */}
-      <ControlPanel
-        position="fixed"
-        addPage={addPage}
-        save={() => save(portfolioModified)}
-        unsavedChange={unsavedChange}
-        undoAllChanges={undoAllChanges}
-        fetchStatus={saveStatus}
-      />
-      {portfolioModified && (
-        <PortfolioLandingDndContext
-          portfolioModified={portfolioModified}
-          setPortfolioModified={setPortfolioModified}
-          setUnsavedChange={setUnsavedChange}
-        >
-          <div css={[body, saveStatus !== 'idle' && fetchDisable]}>
+    <ContentPageWrapper
+      rootDataFetchStatus={portfolioRoot.fetchStatus}
+      resetRootDataFetch={portfolioRoot.resetFetch}
+      controls={{
+        addElements: [{ text: 'page', func: addPage }],
+        undoChanges,
+        save,
+      }}
+    >
+      <div css={container}>
+        {portfolioModified[0] && (
+          <SortableDndContext
+            items={portfolioModified.map((element) => element.id)}
+            updateData={setPortfolioModified}
+            setUnsavedChange={setUnsavedChange}
+          >
             {portfolioModified.map((page) => (
-              <OverviewPage
-                data={page}
-                deletePage={() => deletePage(page.id)}
-                unsavedChange={unsavedChange}
-                key={page.id}
-              />
+              <SortableElement element={page} key={page.id}>
+                <PortfolioElement
+                  data={page}
+                  deletePage={() => deletePage(page.id)}
+                />
+              </SortableElement>
             ))}
-            {portfolioModified.length > 3 && (
-              <PageNumbers numberPages={portfolioModified.length} />
-            )}
-          </div>
-        </PortfolioLandingDndContext>
-      )}
-      {/* <Settings /> */}
-      <RouterPrompt unsavedChange={unsavedChange} />
-    </div>
+          </SortableDndContext>
+        )}
+        {portfolioModified.length > 3 && (
+          <PageNumbers numberPages={portfolioModified.length} />
+        )}
+      </div>
+    </ContentPageWrapper>
   );
 }
 
-function Portfolio() {
-  const { path } = useRouteMatch();
-  const { portfolioRoot } = useData();
-
+function PortfolioLanding() {
   return (
-    <Switch>
-      <Route exact path={path}>
-        <PortfolioLanding />
-      </Route>
-      {portfolioRoot && (
-        <Route path={`${path}/:pageId`}>
-          <PortfolioPage />
-        </Route>
-      )}
-      <Route render={() => <Redirect to="/portfolio" />} />
-    </Switch>
+    <ContentPageProvider page="portfolio-landing">
+      <Content />
+    </ContentPageProvider>
   );
 }
 
-export default Portfolio;
+export default PortfolioLanding;

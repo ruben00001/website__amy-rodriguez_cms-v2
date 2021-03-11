@@ -2,28 +2,35 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import { useState } from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-
-import { selectImage } from '../../utils';
-import ElementControls from './ElementControls';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 
+import { selectImage } from '../../utils/contentPageUtils';
+
+import ElementControls from '../common/ElementControls';
+
 const pressElement = css({
   position: 'relative',
-  marginBottom: 20,
-  cursor: 'grab',
 
-  img: {
+  '::before': {
+    content: '" "',
+    display: 'block',
     width: '100%',
-    height: '100%',
-    objectFit: 'cover',
+    height: 0,
+    paddingTop: '100%',
   },
 });
 
-const newElement = (theme) =>
+const imgStyle = css({
+  position: 'absolute',
+  left: 0,
+  top: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+});
+
+const emptyStyle = (theme) =>
   css({
     border: `1px solid ${theme.colors.midgrey}`,
   });
@@ -53,63 +60,40 @@ const visitLinkText = css({
   color: 'black',
   paddingTop: 2,
   textAlign: 'right',
+  backgroundColor: 'white',
+  borderRadius: 2,
 });
 
 function PressElement({
   element,
-  canvasWidth,
   editElementText,
   editElementImage,
   deleteElement,
+  hovered,
+  isDragging,
 }) {
-  const [hovered, setHovered] = useState(false);
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: element.id });
-
-  const sortableStyle = css({
-    transform: CSS.Transform.toString(transform),
-    transition,
-  });
-
+  const empty = !element.title && !element.image;
   return (
-    <div
-      css={[
-        pressElement,
-        {
-          width: canvasWidth / 6,
-          height: canvasWidth / 6,
-        },
-        sortableStyle,
-        isDragging && { zIndex: 100, cursor: 'grabbing' },
-        element.new && newElement,
-      ]}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-    >
+    <div css={[pressElement, empty && emptyStyle]}>
       {element.image && (
-        <img src={selectImage(element.image.image, 'small')} alt="" />
+        <img
+          css={imgStyle}
+          src={selectImage(element.image.image, 'small')}
+          alt=""
+        />
       )}
-      <div css={[elementOverlay, (!hovered || isDragging) && { opacity: 0 }]}>
+      <div css={[elementOverlay, !hovered && element.image && { opacity: 0 }]}>
         <p>{element.title}</p>
       </div>
-
       <ElementControls
-        show={hovered}
-        editElementText={editElementText}
-        editElementImage={editElementImage}
-        deleteElement={deleteElement}
+        show={hovered && !isDragging}
+        buttons={[
+          { type: 'image', func: editElementImage },
+          { type: 'text', func: editElementText },
+          { type: 'delete', func: deleteElement },
+        ]}
       />
-
-      {hovered && element.linkUrl && (
+      {element.linkUrl && hovered && !isDragging && (
         <a
           css={visitLinkText}
           href={element.linkUrl}

@@ -6,13 +6,13 @@ import React from 'react';
 import loadingGif from '../../images/loading_spinning-bar-rainbow.gif';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useState } from 'react';
 import { button } from './styles';
 import { Link } from 'react-router-dom';
 
 const container = css({
   zIndex: 1000,
-  position: 'absolute',
+  position: 'fixed',
   width: '100%',
   height: '100%',
   display: 'flex',

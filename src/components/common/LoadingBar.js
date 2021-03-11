@@ -2,6 +2,9 @@
 /** @jsx jsx */
 
 import { jsx, css, keyframes } from '@emotion/react';
+import React from 'react';
+import { faCheck, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { transitionDurationAndTiming } from './styles';
 
@@ -54,9 +57,39 @@ const rejected = (theme) =>
     animationPlayState: 'paused',
   });
 
-function LoadingBar({ status }) {
+const statusText = css({
+  position: 'fixed',
+  left: '50%',
+  top: 80,
+  display: 'flex',
+  alignItems: 'center',
+  transform: 'translateX(-50%)',
+  transition: 'opacity 0.2s ease-in-out',
+  fontVariant: 'small-caps',
+});
+
+const statusIconResolved = (theme) =>
+  css({
+    color: theme.input.resolved,
+    marginLeft: 8,
+  });
+
+const statusIconRejected = (theme) =>
+  css({
+    color: theme.input.rejected,
+    marginLeft: 8,
+  });
+
+function LoadingBar({ status, showStatusText }) {
   return (
-    <div css={[container, status === 'idle' && { opacity: 0 }]}>
+    <div
+      css={[
+        container,
+        (status === 'idle' || status === 'complete') && {
+          opacity: 0,
+        },
+      ]}
+    >
       <div
         css={[
           movingBar,
@@ -65,6 +98,22 @@ function LoadingBar({ status }) {
           status === 'rejected' && rejected,
         ]}
       />
+      {showStatusText && (
+        <div css={[statusText]}>
+          {status === 'resolved' && (
+            <React.Fragment>
+              <p>done</p>
+              <FontAwesomeIcon css={statusIconResolved} icon={faCheck} />
+            </React.Fragment>
+          )}
+          {status === 'rejected' && (
+            <React.Fragment>
+              <p>something went wrong</p>
+              <FontAwesomeIcon css={statusIconRejected} icon={faTimesCircle} />
+            </React.Fragment>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -2,28 +2,36 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/core';
-import { useState } from 'react';
+import React, { Children, cloneElement, useMemo, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+
 import { useData } from '../../context/DataContext';
 
-const container = css({
-  position: 'relative',
+const placeholderContainer = css({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  zIndex: 500,
 });
 
 const tooltipContainer = css({
-  zIndex: 500,
+  fontFamily: "'Roboto', sans-serif",
+  display: 'display',
   position: 'absolute',
   top: 'calc(100% + 5px)',
   left: '50%',
-  opacity: 0,
   whiteSpace: 'nowrap',
-  backgroundColor: 'black',
-  color: '#fff',
+  backgroundColor: '#4d4d4d',
+  color: 'white',
   textAlign: 'center',
   padding: '7px 10px',
   borderRadius: 3,
-  fontSize: 13,
+  fontSize: 12,
   transition: 'opacity .1s ease-in-out',
   transitionDelay: '.2s',
+  fontVariant: 'normal',
 
   '&::after': {
     // makes the triangle part of the tooltip
@@ -34,40 +42,54 @@ const tooltipContainer = css({
     marginLeft: '-5px',
     borderWidth: 5,
     borderStyle: 'solid',
-    borderColor: 'transparent transparent black transparent',
+    borderColor: 'transparent transparent #4d4d4d transparent',
   },
-});
-
-const opacityOn = css({
-  opacity: 0.7,
 });
 
 function Tooltip({ children, message, disable, translate = 0 }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const { settingsRoot = { tooltips: true } } = useData();
+  const { settingsRoot } = useData();
+  const tooltips = useMemo(() => {
+    if (!settingsRoot?.data) return true;
+    return settingsRoot.data.tooltips;
+  }, [settingsRoot.data]);
 
   return (
-    <div css={container}>
-      <div
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-      >
-        {children}
-      </div>
-      {!disable && settingsRoot?.tooltips && (
-        <div
-          css={[
-            tooltipContainer,
-            { transform: `translateX(calc(-50% + ${translate}px))` },
-            { '&::after': { transform: `translateX(${-translate}px)` } },
-            showTooltip && opacityOn,
-          ]}
-        >
-          {message}
-        </div>
-      )}
-    </div>
+    <React.Fragment>
+      {Children.map(children, (child) => {
+        if (children.length > 1) {
+          throw new Error(`Tooltip is currently set up to work with 1 child.`);
+        }
+        return cloneElement(child, child.props, [
+          child.props.children,
+          <div
+            css={[
+              placeholderContainer,
+              (disable || !tooltips) && {
+                display: 'none',
+              },
+            ]}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            key={uuidv4()}
+          >
+            <div
+              css={[
+                tooltipContainer,
+                { transform: `translateX(calc(-50% + ${translate}px))` },
+                { '&::after': { transform: `translateX(${-translate}px)` } },
+                !showTooltip && {
+                  display: 'none',
+                },
+              ]}
+            >
+              {message}
+            </div>
+          </div>,
+        ]);
+      })}
+    </React.Fragment>
   );
 }
 

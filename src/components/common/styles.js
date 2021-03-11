@@ -16,4 +16,9 @@ const fetchDisable = css({
   pointerEvents: 'none',
 });
 
-export { button, transitionDurationAndTiming, fetchDisable };
+const canvasDefault = css({
+  backgroundColor: 'white',
+  boxShadow: '0px 1px 4px rgba(0,0,0,0.2)',
+});
+
+export { button, transitionDurationAndTiming, fetchDisable, canvasDefault };

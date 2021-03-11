@@ -2,441 +2,470 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import React, {
-  useRef,
-  useLayoutEffect,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
+import { useParams, useHistory } from 'react-router-dom';
+import produce from 'immer';
 import { Parser } from 'html-to-react';
+import { v4 as uuidv4 } from 'uuid';
 
-import ControlPanel from '../components/common/ControlPanel';
-// import InitialLoadingDataOverlay from '../components/common/InitialLoadingDataOverlay';
-import { defaultProductMoveableComponentFields, devices } from '../constants';
 import { useData } from '../context/DataContext';
-import useCanvasSize from '../hooks/useCanvasSize';
-import RndComponent from '../components/product/RndComponent';
+
 import {
   calcPercentageValue,
-  confirmWrapper,
   convertValueToPercent,
-  createDefaultImageComponent,
-  selectImage,
-  selectStyleDataForDevice,
+  findElement,
+  sortByAscending,
 } from '../utils';
-import produce from 'immer';
-import { useHistory } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import { button } from '../components/common/styles';
-import RouterPrompt from '../components/common/RouterPrompt';
-import AddImagePopup from '../components/product/AddImagePopup';
-import ApiRequestOverlay from '../components/common/ApiRequestOverlay';
-import useSaveProduct from '../hooks/useSaveProduct';
 
-const container = css({
-  display: 'flex',
-  flexDirection: 'column',
-  height: '100vh',
-  width: '100%',
-  overflow: 'hidden',
-});
+import { defaultProductValues } from '../constants';
+import {
+  ContentPageProvider,
+  useContentPage,
+} from '../context/ContentPageContext';
+import ContentPageWrapper from '../components/common/ContentPageWrapper';
+import {
+  confirmWrapper,
+  createImageComponent,
+  deleteElement,
+  selectComponent,
+  selectImage,
+} from '../utils/contentPageUtils';
 
-const body = (theme) =>
-  css({
-    display: 'flex',
-    position: 'relative',
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.verylightgrey,
-  });
+import { canvasDefault } from '../components/common/styles';
+import RndElement from '../components/common/RndElement';
+import ImageElement from '../components/product/ImageElement';
+import EditImagePopup from '../components/common/EditImagePopup';
+import TextElement from '../components/product/TextElement';
+import TextAlignmentElement from '../components/product/TextAlignmentElement';
 
-const backButton = css(button, {
+const canvas = css(canvasDefault, {
   position: 'absolute',
-  left: 20,
-  top: 8,
-  display: 'flex',
-  alignItems: 'center',
-  color: 'black',
-  border: '1px solid black',
-  // backgroundColor: 'white',
-  borderRadius: 2,
-  fontSize: 11,
-  fontWeight: 'bold',
-
-  p: {
-    marginLeft: 4,
-  },
+  left: '50%',
+  transform: 'translateX(-50%)',
 });
 
-const backIcon = css({
-  fontSize: 11,
-});
+/* NOTES
+  - canvas should be centered vertically
+*/
 
-const canvas = css({
-  position: 'relative',
-  backgroundColor: 'white',
-  boxShadow: '0px 1px 4px rgba(0,0,0,0.2)',
-});
+function Content() {
+  const [productModified, setProductModified] = useState(null);
+  const [showEditImagePopup, setShowEditImagePopup] = useState(false);
+  const [textElementWidths, setTextElementWidths] = useState({});
+  console.log(
+    '🚀 ~ file: Product.js ~ line 55 ~ Content ~ textElementWidths',
+    textElementWidths
+  );
 
-function Product({ shopifyData }) {
-  // const [dataModified, setDataModified] = useState(null);
-  // const [deviceNum, setDeviceNum] = useState(0);
-  // const [unsavedChange, setUnsavedChange] = useState(false);
-  // const [showAddImagePopup, setShowAddImagePopup] = useState(false);
-  // const [imageControlsHovered, setImageControlsHovered] = useState(false);
-  // const device = useMemo(() => devices[deviceNum], [deviceNum]);
+  // console.log(
+  //   '🚀 ~ file: Product.js ~ line 18 ~ Product ~ productModified',
+  //   productModified
+  // );
 
-  // // SET UP DATA
+  // HOOKS
 
-  // const {
-  //   status: rootDataFetchStatus,
-  //   strapiProducts: strapiProductsRoot,
-  // } = useData();
-  // const productDataProcessed = useMemo(() => {
-  //   if (strapiProductsRoot && shopifyData) {
-  //     const strapiProduct = strapiProductsRoot.find(
-  //       (strapiProduct) => strapiProduct.shopifyId === shopifyData.id
-  //     );
-  //     const strapiProductProcessed = produce(strapiProduct, (draft) => {
-  //       for (const [key, value] of Object.entries(draft)) {
-  //         if (value === null) {
-  //           draft[key] = defaultProductMoveableComponentFields[key];
-  //         }
-  //       }
-  //     });
+  const { history } = useHistory();
+  const {
+    setUnsavedChange,
+    device,
+    handleSave,
+    mapFetches,
+    canvasWidth,
+    singleScreenBodyHeight,
+    singleScreenCanvasHeight,
+  } = useContentPage();
 
-  //     return strapiProductProcessed;
-  //   } else {
-  //     return null;
-  //   }
-  // }, [shopifyData, strapiProductsRoot]);
+  // SET UP DATA
 
-  // // CANVAS
+  const { strapiProductsRoot, shopifyProducts } = useData();
+  const { pageId } = useParams();
+  const productProcessed = useMemo(() => {
+    if (!shopifyProducts.data || !strapiProductsRoot.data) return null;
 
-  // const bodyRef = useRef(null);
-  // const { width: canvasWidth, height: canvasHeight } = useCanvasSize({
-  //   parentWidth: bodyRef.current?.offsetWidth,
-  //   parentHeight: bodyRef.current?.offsetHeight,
-  //   device,
-  // });
+    const shopifyProduct = findElement(pageId, shopifyProducts.data);
+    const strapiProduct = findElement(
+      pageId,
+      strapiProductsRoot.data,
+      'shopifyId'
+    );
 
-  // // HOOKS
+    if (!strapiProduct) {
+      history.push('/shop');
+      return null;
+    }
 
-  // const { goBack } = useHistory();
-  // const { save, status: saveStatus } = useSaveProduct(setUnsavedChange);
+    const strapiProductProcessed = produce(strapiProduct, (draft) => {
+      delete draft.shopHomeImgPositions;
+      delete draft.shopHomeImgWidths;
 
-  // useEffect(() => {
-  //   if (dataModified) {
-  //     console.log('dataModified:', dataModified);
-  //   }
-  // }, [dataModified, shopifyData]);
+      for (const [key, value] of Object.entries(draft)) {
+        if (value === null || (key === 'textAlignmentPosition' && !value[0])) {
+          draft[key] = defaultProductValues[key];
+        }
+      }
+    });
 
-  // useLayoutEffect(() => {
-  //   if (productDataProcessed) {
-  //     setDataModified(productDataProcessed);
-  //   }
-  // }, [productDataProcessed]);
+    return {
+      ...strapiProductProcessed,
+      descriptionJsx: htmlToJsx(shopifyProduct.descriptionHtml),
+      price: `£${shopifyProduct.variants[0].price.replace('.00', '')}`,
+      title: shopifyProduct.title,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId, shopifyProducts.data, strapiProductsRoot.data]);
 
-  // // HELPERS
+  useLayoutEffect(() => {
+    if (productProcessed) setProductModified(productProcessed);
+  }, [productProcessed]);
 
-  // function selectStyleComponentAndCalcValue(styleType, components) {
-  //   const component = selectStyleDataForDevice(components, device);
-  //   if (styleType === 'position') {
-  //     return {
-  //       x: calcPercentageValue(component.x, canvasWidth),
-  //       y: calcPercentageValue(component.y, canvasHeight),
-  //     };
-  //   }
-  //   if (styleType === 'width') {
-  //     return component.value;
-  //   }
-  // }
+  // HELPERS
 
-  // function htmlToJsx(html) {
-  //   const parser = new Parser();
-  //   return parser.parse(html);
-  // }
+  function htmlToJsx(html) {
+    const parser = new Parser();
+    return parser.parse(html);
+  }
 
-  // // UPDATE MODIFIABLE COMPONENTS
+  function handleSelectPosition(component) {
+    const { x, y } = selectComponent(
+      component.positions,
+      device,
+      'aspectRatio'
+    );
 
-  // function setModifiableComponentField({
-  //   type,
-  //   imageToUpdateId,
-  //   field,
-  //   newValue,
-  // }) {
-  //   setDataModified(
-  //     produce((draft) => {
-  //       let modifiableComponent;
+    return {
+      x: calcPercentageValue(x, canvasWidth),
+      y: calcPercentageValue(y, singleScreenCanvasHeight),
+    };
+  }
 
-  //       if (type === 'images') {
-  //         modifiableComponent = draft.images.find(
-  //           (image) => image.id === imageToUpdateId
-  //         );
-  //       } else {
-  //         modifiableComponent = draft[type];
-  //       }
+  const handleSelectAlignmentPosition = () => {
+    const component = selectComponent(
+      productModified.textAlignmentPosition,
+      device,
+      'aspectRatio'
+    );
 
-  //       const componentFieldValues = modifiableComponent[field];
-  //       const currentComponent = selectStyleDataForDevice(
-  //         componentFieldValues,
-  //         device
-  //       );
+    return {
+      x: calcPercentageValue(component.value, canvasWidth),
+      y: 0,
+    };
+  };
 
-  //       if (device.aspectRatio === currentComponent.aspectRatio) {
-  //         const currentComponentIndex = componentFieldValues.findIndex(
-  //           (component) => component.aspectRatio === device.aspectRatio
-  //         );
-  //         componentFieldValues.splice(currentComponentIndex, 1);
-  //       }
+  function alignText(alignment) {
+    setProductModified(
+      produce((draft) => {
+        productTextFields.forEach((textElement) => {
+          const draftField = draft[textElement.key];
+          const positions = draftField.positions;
+          const usedComponent = selectComponent(
+            positions,
+            device,
+            'aspectRatio'
+          );
 
-  //       const newComponent = {
-  //         aspectRatio: device.aspectRatio,
-  //       };
+          if (alignment === 'left') {
+            usedComponent.x = convertValueToPercent(
+              textAlignmentPosition.x,
+              canvasWidth
+            );
+          } else if (alignment === 'center') {
+            const x =
+              textAlignmentPosition.x - textElementWidths[textElement.key] / 2;
+            usedComponent.x = convertValueToPercent(x, canvasWidth);
+          } else {
+            const x =
+              textAlignmentPosition.x - textElementWidths[textElement.key];
+            usedComponent.x = convertValueToPercent(x, canvasWidth);
+          }
+        });
+      })
+    );
+  }
 
-  //       if (field === 'positions') {
-  //         newComponent.x = convertValueToPercent(newValue.x, canvasWidth);
-  //         newComponent.y = convertValueToPercent(newValue.y, canvasHeight);
-  //       }
-  //       if (field === 'widths') {
-  //         newComponent.value = newValue;
-  //       }
+  // UPDATE DATA
 
-  //       componentFieldValues.push(newComponent);
-  //     })
-  //   );
-  //   setUnsavedChange(true);
-  // }
+  function handleUpdatePositionOrWidth({
+    productField,
+    component,
+    componentField,
+    newValue,
+  }) {
+    setProductModified(
+      produce((draft) => {
+        const draftField = draft[productField];
 
-  // function updateImageLayer(imageToUpdateId, newValue) {
-  //   setDataModified(
-  //     produce((draft) => {
-  //       const draftImages = draft.images;
-  //       const imageToUpdate = draftImages.find(
-  //         (image) => image.id === imageToUpdateId
-  //       );
-  //       imageToUpdate.layer = newValue;
-  //     })
-  //   );
-  //   setUnsavedChange(true);
-  // }
+        let fieldComponents;
 
-  // function addImage(image) {
-  //   setDataModified(
-  //     produce((draft) => {
-  //       const draftImages = draft.images;
-  //       const newComponent = createDefaultImageComponent({
-  //         imageComponents: draftImages,
-  //         image,
-  //         device,
-  //         page: 'product',
-  //       });
-  //       draft.images = [...draftImages, newComponent];
-  //     })
-  //   );
-  //   setUnsavedChange(true);
-  // }
+        if (productField === 'images') {
+          const draftElement = findElement(component.id, draftField);
+          fieldComponents = draftElement[componentField];
+        } else if (productField === 'textAlignmentPosition') {
+          fieldComponents = draftField;
+        } else {
+          fieldComponents = draftField[componentField];
+        }
 
-  // function deleteImage(imageToDeleteId) {
-  //   function payload() {
-  //     setDataModified(
-  //       produce((draft) => {
-  //         const draftImages = draft.images;
-  //         const imageToDeleteIndex = draftImages.findIndex(
-  //           (image) => image.id === imageToDeleteId
-  //         );
-  //         draftImages.splice(imageToDeleteIndex, 1);
-  //       })
-  //     );
-  //     setUnsavedChange(true);
-  //   }
+        const usedComponent = selectComponent(
+          fieldComponents,
+          device,
+          'aspectRatio'
+        );
 
-  //   const confirmMessage = 'Are you sure you want to delete this image?';
+        if (usedComponent.aspectRatio === device.aspectRatio) {
+          deleteElement(usedComponent, fieldComponents, 'aspectRatio');
+        }
 
-  //   confirmWrapper(confirmMessage, payload);
-  // }
+        const newComponent = {};
+        newComponent.aspectRatio = device.aspectRatio;
 
-  // function undoAllChanges() {
-  //   function payload() {
-  //     setDataModified(productDataProcessed);
-  //     setUnsavedChange(false);
-  //   }
+        if (productField === 'textAlignmentPosition') {
+          newComponent.value = convertValueToPercent(newValue.x, canvasWidth);
+        } else if (componentField === 'positions') {
+          newComponent.x = convertValueToPercent(newValue.x, canvasWidth);
+          newComponent.y = convertValueToPercent(
+            newValue.y,
+            singleScreenCanvasHeight
+          );
+        } else {
+          newComponent.value = newValue;
+        }
+        fieldComponents.push(newComponent);
+      })
+    );
+    setUnsavedChange(true);
+  }
 
-  //   const confirmMessage =
-  //     'Any unsaved work will be lost. Are you sure you want to undo all changes?';
+  function handleUpdateOrderOrLayer(componentToUpdate, field, newValue) {
+    setProductModified(
+      produce((draft) => {
+        const draftComponent = findElement(componentToUpdate.id, draft.images);
+        draftComponent[field] = newValue;
+      })
+    );
+    setUnsavedChange(true);
+  }
 
-  //   confirmWrapper(confirmMessage, payload);
-  // }
+  function handleUpdateShopHomeStatus(newMainComponent) {
+    setProductModified(
+      produce((draft) => {
+        draft.images.forEach((component) => {
+          component.shopHomeStatus =
+            component.id === newMainComponent.id ? 'main' : 'none';
+        });
+      })
+    );
+    setUnsavedChange(true);
+  }
+
+  function handleAddImage(image) {
+    const newElement = createImageComponent({
+      id: uuidv4(),
+      orderAndLayerValue: productModified.images.length + 1,
+      image,
+      device,
+    });
+    setProductModified(
+      produce((draft) => {
+        draft.images.push(newElement);
+      })
+    );
+    setUnsavedChange(true);
+  }
+
+  const handleDeleteImage = (imageToDelete) =>
+    confirmWrapper('delete', () => {
+      setProductModified(
+        produce((draft) => {
+          const draftImages = draft.images;
+          const draftIndex = draftImages.findIndex(
+            (component) => component.id === imageToDelete.id
+          );
+          draftImages.splice(draftIndex, 1);
+
+          // process orders and layers
+          sortByAscending(draftImages, 'order');
+          draftImages.forEach((component, i) => {
+            component.order = i + 1;
+
+            if (component.layer > draftImages.length) {
+              component.layer = draftImages.length;
+            }
+          });
+        })
+      );
+
+      setUnsavedChange(true);
+    });
+
+  const undoChanges = () =>
+    confirmWrapper('undo', () => {
+      setProductModified(productProcessed);
+      setUnsavedChange(false);
+    });
+
+  function save() {}
+
+  // DERIVED DATA
+
+  const productTextFields = useMemo(
+    () =>
+      productModified
+        ? [
+            { key: 'addToCartButton', text: 'Add to Cart.' },
+            { key: 'productDiscount', text: '£100' },
+            {
+              key: 'productViewDescription',
+              text: productModified.descriptionJsx,
+            },
+            { key: 'productViewPrice', text: productModified.price },
+            { key: 'productViewTitle', text: productModified.title },
+          ]
+        : null,
+    [productModified]
+  );
+
+  const textAlignmentPosition = useMemo(
+    () => (productModified ? handleSelectAlignmentPosition() : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [productModified]
+  );
 
   return (
-    <div css={container}>
-      {/* <ApiRequestOverlay status={saveStatus} />
-      <ControlPanel
-        position="static"
-        addImage={() => setShowAddImagePopup(true)}
-        setDevice={setDeviceNum}
-        save={() => save(dataModified)}
-        unsavedChange={unsavedChange}
-        undoAllChanges={undoAllChanges}
-      />
-      <AddImagePopup
-        show={showAddImagePopup}
-        close={() => setShowAddImagePopup(false)}
-        addImage={addImage}
-      />
-      <div css={body} ref={bodyRef}>
-        <div css={backButton} onClick={() => goBack()}>
-          <FontAwesomeIcon css={backIcon} icon={faArrowLeft} />
-          <p>BACK</p>
-        </div>
-        {canvasWidth && canvasHeight && (
-          <div
-            css={[
-              canvas,
-              {
-                width: `${canvasWidth}px`,
-                height: `${canvasHeight}px`,
-              },
-            ]}
-          >
-            {dataModified && (
-              <React.Fragment>
-                {dataModified.images.map((imageComponent) => (
-                  <RndComponent
-                    type="image"
-                    imgSrc={selectImage(imageComponent.image.image, 'medium')}
-                    width={selectStyleComponentAndCalcValue(
-                      'width',
-                      imageComponent.widths
-                    )}
-                    position={selectStyleComponentAndCalcValue(
-                      'position',
-                      imageComponent.positions
-                    )}
-                    layer={imageComponent.layer}
-                    numberImages={dataModified.images.length}
-                    setModifiableComponentField={(field, newValue) =>
-                      setModifiableComponentField({
-                        type: 'images',
-                        imageToUpdateId: imageComponent.id,
-                        field,
-                        newValue,
-                      })
+    <ContentPageWrapper
+      controls={{
+        addElements: [
+          { text: 'image', func: () => setShowEditImagePopup(true) },
+        ],
+        device: true,
+        undoChanges,
+        save,
+        back: '/shop',
+      }}
+      editImagePopup={
+        <EditImagePopup
+          show={showEditImagePopup}
+          close={() => setShowEditImagePopup(false)}
+          handleImage={({ data }) => handleAddImage(data)}
+        />
+      }
+    >
+      {singleScreenBodyHeight && singleScreenCanvasHeight && canvasWidth && (
+        <div
+          css={[
+            canvas,
+            {
+              width: canvasWidth,
+              height: singleScreenCanvasHeight,
+              top: (singleScreenBodyHeight - singleScreenCanvasHeight) / 2,
+            },
+          ]}
+        >
+          {productModified && (
+            <React.Fragment>
+              {productModified.images.map((component) => (
+                <RndElement
+                  width={
+                    selectComponent(component.widths, device, 'aspectRatio')
+                      .value
+                  }
+                  position={handleSelectPosition(component)}
+                  zIndex={productModified.images.length - component.layer}
+                  updatePosition={(newValue) =>
+                    handleUpdatePositionOrWidth({
+                      productField: 'images',
+                      component,
+                      componentField: 'positions',
+                      newValue,
+                    })
+                  }
+                  updateWidth={(newValue) =>
+                    handleUpdatePositionOrWidth({
+                      productField: 'images',
+                      component,
+                      componentField: 'widths',
+                      newValue,
+                    })
+                  }
+                  enableResizing={{
+                    right: true,
+                    bottom: true,
+                    bottomRight: true,
+                  }}
+                  key={component.id}
+                >
+                  <ImageElement
+                    src={selectImage(component.image.image, 'medium')}
+                    canvasWidth={canvasWidth}
+                    canvasHeight={singleScreenCanvasHeight}
+                    numberComponents={productModified.images.length}
+                    shopHomeStatus={component.shopHomeStatus}
+                    order={component.order}
+                    layer={component.layer}
+                    updateShopHomeStatus={() =>
+                      handleUpdateShopHomeStatus(component)
+                    }
+                    updateOrder={(newValue) =>
+                      handleUpdateOrderOrLayer(component, 'order', newValue)
                     }
                     updateLayer={(newValue) =>
-                      updateImageLayer(imageComponent.id, newValue)
+                      handleUpdateOrderOrLayer(component, 'layer', newValue)
                     }
-                    deleteImage={() => deleteImage(imageComponent.id)}
-                    controlsHovered={Boolean(imageControlsHovered)}
-                    thisComponentControlsHovered={
-                      imageControlsHovered === imageComponent.id
-                    }
-                    setControlsHoveredOn={() =>
-                      setImageControlsHovered(imageComponent.id)
-                    }
-                    setControlsHoveredOff={() => setImageControlsHovered(null)}
-                    canvasWidth={canvasWidth}
-                    canvasHeight={canvasHeight}
-                    key={imageComponent.id}
+                    deleteElement={() => handleDeleteImage(component)}
                   />
-                ))}
-                <RndComponent
-                  type="text"
-                  text="Add To Cart"
-                  position={selectStyleComponentAndCalcValue(
-                    'position',
-                    dataModified.addToCartButton.positions
-                  )}
-                  canvasWidth={canvasWidth}
-                  canvasHeight={canvasHeight}
-                  setModifiableComponentField={(field, newValue) =>
-                    setModifiableComponentField({
-                      type: 'addToCartButton',
-                      field,
+                </RndElement>
+              ))}
+              {productTextFields.map((textData, i) => (
+                <RndElement
+                  position={handleSelectPosition(productModified[textData.key])}
+                  updatePosition={(newValue) =>
+                    handleUpdatePositionOrWidth({
+                      productField: textData.key,
+                      componentField: 'positions',
                       newValue,
                     })
                   }
-                />
-                <RndComponent
-                  type="text"
-                  variant="discount"
-                  text="£100"
-                  position={selectStyleComponentAndCalcValue(
-                    'position',
-                    dataModified.productDiscount.positions
-                  )}
-                  canvasWidth={canvasWidth}
-                  canvasHeight={canvasHeight}
-                  setModifiableComponentField={(field, newValue) =>
-                    setModifiableComponentField({
-                      type: 'productDiscount',
-                      field,
-                      newValue,
-                    })
-                  }
-                />
-                <RndComponent
-                  type="text"
-                  text={htmlToJsx(shopifyData.descriptionHtml)}
-                  position={selectStyleComponentAndCalcValue(
-                    'position',
-                    dataModified.productViewDescription.positions
-                  )}
-                  canvasWidth={canvasWidth}
-                  canvasHeight={canvasHeight}
-                  setModifiableComponentField={(field, newValue) =>
-                    setModifiableComponentField({
-                      type: 'productViewDescription',
-                      field,
-                      newValue,
-                    })
-                  }
-                />
-                <RndComponent
-                  type="text"
-                  text={`£${shopifyData.variants[0].price.replace('.00', '')}`}
-                  position={selectStyleComponentAndCalcValue(
-                    'position',
-                    dataModified.productViewPrice.positions
-                  )}
-                  canvasWidth={canvasWidth}
-                  canvasHeight={canvasHeight}
-                  setModifiableComponentField={(field, newValue) =>
-                    setModifiableComponentField({
-                      type: 'productViewPrice',
-                      field,
-                      newValue,
-                    })
-                  }
-                />
-                <RndComponent
-                  type="text"
-                  text={shopifyData.title}
-                  position={selectStyleComponentAndCalcValue(
-                    'position',
-                    dataModified.productViewTitle.positions
-                  )}
-                  canvasWidth={canvasWidth}
-                  canvasHeight={canvasHeight}
-                  setModifiableComponentField={(field, newValue) =>
-                    setModifiableComponentField({
-                      type: 'productViewTitle',
-                      field,
-                      newValue,
-                    })
-                  }
-                />
-              </React.Fragment>
-            )}
-          </div>
-        )}
-      </div>
-      <RouterPrompt unsavedChange={unsavedChange} /> */}
-    </div>
+                  key={i}
+                >
+                  <TextElement
+                    text={textData.text}
+                    canvasWidth={canvasWidth}
+                    canvasHeight={singleScreenCanvasHeight}
+                    widthSet={textElementWidths[textData.key]}
+                    setWidth={(value) =>
+                      setTextElementWidths((state) => {
+                        return { ...state, [textData.key]: value };
+                      })
+                    }
+                  />
+                </RndElement>
+              ))}
+              <RndElement
+                position={textAlignmentPosition}
+                width="20"
+                widthUnit="px"
+                height={singleScreenCanvasHeight}
+                dragAxis="x"
+                updatePosition={(newValue) =>
+                  handleUpdatePositionOrWidth({
+                    productField: 'textAlignmentPosition',
+                    newValue,
+                  })
+                }
+              >
+                <TextAlignmentElement alignText={alignText} />
+              </RndElement>
+            </React.Fragment>
+          )}
+        </div>
+      )}
+    </ContentPageWrapper>
   );
 }
+
+const Product = () => (
+  <ContentPageProvider page="product">
+    <Content />
+  </ContentPageProvider>
+);
 
 export default Product;

@@ -2,15 +2,18 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useReducer } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 import { useData } from '../../context/DataContext';
 import usePostImageUpload from '../../hooks/usePostImageUpload';
-import { selectImage } from '../../utils';
-import ApiRequestOverlay from '../common/ApiRequestOverlay';
-import { button } from '../common/styles';
+
+import { selectImage } from '../../utils/contentPageUtils';
+
+import LoadingBar from './LoadingBar';
+
+import { button, fetchDisable } from './styles';
 
 const container = (theme) =>
   css({
@@ -28,6 +31,7 @@ const container = (theme) =>
   });
 
 const content = css({
+  position: 'relative',
   width: '80vw',
   minHeight: '80vh',
   backgroundColor: 'white',
@@ -183,29 +187,53 @@ const confirmButton = (theme) =>
     fontWeight: 800,
   });
 
+/* NOTES
+  - handle upload rejection - offer to try again
+  - handle images not loading
+*/
+
 const initialUploadPreview = { name: null, url: null };
+const selectedImageInitialState = { type: null, data: null };
 
-function EditImagePopup({ close, editImage }) {
-  // should probably use usereducer since these change together
+function selectedImageReducer(_, { type, data }) {
+  switch (type) {
+    case 'upload':
+      return { type };
+    case 'product':
+      return { type, data };
+    case 'all':
+      return { type, data };
+    case 'reset':
+      return selectedImageInitialState;
+    default:
+      throw new Error(`Unhandled action type: ${type}`);
+  }
+}
+
+function EditImagePopup({ show, close, handleImage, productImages }) {
   const [uploadPreview, setUploadPreview] = useState(initialUploadPreview);
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, selectedImageDispatch] = useReducer(
+    selectedImageReducer,
+    selectedImageInitialState
+  );
 
-  const { images } = useData();
+  const { imagesRoot } = useData();
   const {
     run: postUpload,
     data: uploadData,
     status: postUploadStatus,
+    isActive: postUploadIsActive,
   } = usePostImageUpload();
 
   function closeAndReset() {
+    selectedImageDispatch({ type: 'reset' });
     setUploadPreview(initialUploadPreview);
-    setSelectedImage(null);
     close();
   }
 
   useLayoutEffect(() => {
     if (postUploadStatus === 'resolved') {
-      editImage(uploadData);
+      handleImage({ type: 'upload', data: uploadData });
       closeAndReset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -216,7 +244,7 @@ function EditImagePopup({ close, editImage }) {
     let name = e.target.value.match(/[^/\\&?]+\.\w{3,4}(?=([?&].*$|$))/g); // remove path from name
 
     setUploadPreview({ url, name });
-    setSelectedImage('upload');
+    selectedImageDispatch({ type: 'upload' });
   }
 
   function handleUploadFormSubmit(e) {
@@ -230,24 +258,22 @@ function EditImagePopup({ close, editImage }) {
   }
 
   function handleExistingImage() {
-    const newImage = images.find((image) => image.id === selectedImage);
-
-    editImage(newImage);
+    handleImage(selectedImage);
     closeAndReset();
   }
 
   return (
-    <div css={container}>
-      <ApiRequestOverlay status={postUploadStatus} />
+    <div css={[container, !show && { display: 'none' }]}>
       <div css={content}>
-        <div css={header}>
+        <LoadingBar status={postUploadStatus} />
+        <div css={[header, postUploadIsActive && fetchDisable]}>
           <FontAwesomeIcon
             css={button}
             icon={faTimes}
             onClick={() => close()}
           />
         </div>
-        <div css={uploadContainer}>
+        <div css={[uploadContainer, postUploadIsActive && fetchDisable]}>
           <p>Upload Image:</p>
           <form
             css={uploadForm}
@@ -270,12 +296,12 @@ function EditImagePopup({ close, editImage }) {
               <div
                 css={[
                   imageContainer,
-                  selectedImage === 'upload' && selectedImageBorder,
+                  selectedImage.type === 'upload' && selectedImageBorder,
                 ]}
-                onClick={() => setSelectedImage('upload')}
+                onClick={() => selectedImageDispatch({ type: 'upload' })}
               >
                 <img src={uploadPreview.url} alt="" />
-                {selectedImage === 'upload' && (
+                {selectedImage.type === 'upload' && (
                   <FontAwesomeIcon
                     css={selectedImageIcon}
                     icon={faCheckCircle}
@@ -291,42 +317,112 @@ function EditImagePopup({ close, editImage }) {
           <p>or</p>
           <div />
         </div>
-        <div css={existingImagesContainer}>
-          <p>Select from existing images:</p>
-          <div css={imagesContainer}>
-            {images.map((image) => (
-              <div
-                css={[
-                  imageContainer,
-                  imageMargin,
-                  selectedImage === image.id && selectedImageBorder,
-                ]}
-                onClick={() => setSelectedImage(image.id)}
-                key={image.id}
-              >
-                <img src={selectImage(image.image, 'thumbnail')} alt="" />
-                {selectedImage === image.id && (
-                  <FontAwesomeIcon
-                    css={selectedImageIcon}
-                    icon={faCheckCircle}
-                  />
-                )}
+        {productImages && productImages[0] && (
+          <React.Fragment>
+            <div
+              css={[
+                existingImagesContainer,
+                postUploadIsActive && fetchDisable,
+              ]}
+            >
+              <p>Product images:</p>
+              <div css={imagesContainer}>
+                {productImages.map((image) => (
+                  <div
+                    css={[
+                      imageContainer,
+                      imageMargin,
+                      selectedImage.type === 'product' &&
+                        selectedImage.data.id === image.id &&
+                        selectedImageBorder,
+                    ]}
+                    onClick={() =>
+                      selectedImageDispatch({
+                        type: 'product',
+                        data: image,
+                      })
+                    }
+                    key={image.id}
+                  >
+                    <img
+                      src={selectImage(image.image.image, 'thumbnail')}
+                      alt=""
+                    />
+                    {selectedImage.type === 'product' &&
+                      selectedImage.data.id === image.id && (
+                        <FontAwesomeIcon
+                          css={selectedImageIcon}
+                          icon={faCheckCircle}
+                        />
+                      )}
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            <div css={orDivider}>
+              <div />
+              <p>or</p>
+              <div />
+            </div>
+          </React.Fragment>
+        )}
+        <div
+          css={[existingImagesContainer, postUploadIsActive && fetchDisable]}
+        >
+          <p>All images:</p>
+          <div css={imagesContainer}>
+            {imagesRoot.data &&
+              imagesRoot.data.map((image) => (
+                <div
+                  css={[
+                    imageContainer,
+                    imageMargin,
+                    selectedImage.type === 'all' &&
+                      selectedImage.data.id === image.id &&
+                      selectedImageBorder,
+                  ]}
+                  onClick={() =>
+                    selectedImageDispatch({
+                      type: 'all',
+                      data: image,
+                    })
+                  }
+                  key={image.id}
+                >
+                  <img src={selectImage(image.image, 'thumbnail')} alt="" />
+                  {selectedImage.type === 'all' &&
+                    selectedImage.data.id === image.id && (
+                      <FontAwesomeIcon
+                        css={selectedImageIcon}
+                        icon={faCheckCircle}
+                      />
+                    )}
+                </div>
+              ))}
           </div>
         </div>
         <div css={footer}>
           <div css={cancelButton} onClick={() => close()}>
             Cancel
           </div>
-          {selectedImage && selectedImage === 'upload' ? (
-            <button css={confirmButton} form="upload-form" type="submit">
-              Confirm
-            </button>
-          ) : (
-            <button css={confirmButton} onClick={handleExistingImage}>
-              Confirm
-            </button>
+          {selectedImage.type && (
+            <React.Fragment>
+              {selectedImage.type === 'upload' ? (
+                <button css={confirmButton} form="upload-form" type="submit">
+                  Confirm
+                </button>
+              ) : (
+                <button
+                  css={[
+                    confirmButton,
+                    !selectedImage && { pointerEvents: 'none', opacity: 0.7 },
+                  ]}
+                  onClick={handleExistingImage}
+                >
+                  Confirm
+                </button>
+              )}
+            </React.Fragment>
           )}
         </div>
       </div>

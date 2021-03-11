@@ -6,6 +6,7 @@ import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useContentPage } from '../../context/ContentPageContext';
 import useClickOutside from '../../hooks/useClickOutside';
 import LogoutButton from './LogoutButton';
 import { button } from './styles';
@@ -44,6 +45,8 @@ const link = css({
 function NavigationMenu({ show, close }) {
   const containerRef = useRef(null);
 
+  const { page } = useContentPage();
+
   useClickOutside({
     active: show,
     elementRef: containerRef,
@@ -61,7 +64,13 @@ function NavigationMenu({ show, close }) {
       <Link css={link} to="/shop">
         Shop
       </Link>
-      <Link css={link} to="/press">
+      <Link
+        css={link}
+        to="/press"
+        onClick={(e) => {
+          if (page === 'press') e.preventDefault();
+        }}
+      >
         Press
       </Link>
       <LogoutButton />

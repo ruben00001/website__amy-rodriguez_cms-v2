@@ -4,6 +4,7 @@ import {
   Redirect,
   Route,
   Switch,
+  useRouteMatch,
 } from 'react-router-dom';
 import { ThemeProvider } from '@emotion/react';
 
@@ -15,6 +16,8 @@ import { FetchProvider } from './context/FetchContext';
 import { DataProvider, useData } from './context/DataContext';
 import { DeployProvider } from './context/DeployContext';
 import Press from './pages/Press';
+import PortfolioLanding from './pages/PortfolioLanding';
+import PortfolioPage from './pages/PortfolioPage';
 
 const AuthenticatedRoute = ({ children, ...rest }) => {
   const { isAuthenticated } = useAuth();
@@ -37,9 +40,44 @@ const AuthenticatedRoute = ({ children, ...rest }) => {
   );
 };
 
-function AppRoutes() {
-  const { shopifyProducts } = useData();
+function PortfolioRoutes() {
+  const { path } = useRouteMatch();
+  const { portfolioRoot } = useData();
 
+  return (
+    <Switch>
+      <Route exact path={path}>
+        <PortfolioLanding />
+      </Route>
+      {portfolioRoot.data && (
+        <Route path={`${path}/:pageId`}>
+          <PortfolioPage />
+        </Route>
+      )}
+      <Route render={() => <Redirect to="/portfolio" />} />
+    </Switch>
+  );
+}
+
+function ShopRoutes() {
+  const { path } = useRouteMatch();
+  const { shopifyProducts } = useData();
+  return (
+    <Switch>
+      <Route exact path={path}>
+        <Shop />
+      </Route>
+      {shopifyProducts.data && (
+        <Route path={`${path}/:pageId`}>
+          <Product />
+        </Route>
+      )}
+      <Route render={() => <Redirect to="/shop" />} />
+    </Switch>
+  );
+}
+
+function AppRoutes() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Switch>
@@ -50,17 +88,11 @@ function AppRoutes() {
           <Landing />
         </AuthenticatedRoute>
         <AuthenticatedRoute path="/portfolio">
-          <Portfolio />
+          <PortfolioRoutes />
         </AuthenticatedRoute>
         <AuthenticatedRoute path="/shop">
-          <Shop />
+          <ShopRoutes />
         </AuthenticatedRoute>
-        {shopifyProducts &&
-          shopifyProducts.map((product) => (
-            <AuthenticatedRoute path={`/${product.id}`} key={product.id}>
-              <Product shopifyData={product} />
-            </AuthenticatedRoute>
-          ))}
         <AuthenticatedRoute path="/press">
           <Press />
         </AuthenticatedRoute>

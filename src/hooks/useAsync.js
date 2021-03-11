@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from 'react';
+import { useReducer, useCallback, useMemo } from 'react';
 
 function asyncReducer(state, action) {
   switch (action.type) {
@@ -30,7 +30,7 @@ function useAsync() {
     ...idleState,
   });
 
-  const run = useCallback((promise, processData) => {
+  const run = useCallback((promise, processData, processError) => {
     dispatch({ type: 'pending' });
     promise
       .then((res) => {
@@ -46,15 +46,30 @@ function useAsync() {
         }, 700);
       })
       .catch((error) => {
+        console.log('🚀 ~ file: useAsync.js ~ line 49 ~ run ~ error', error);
+        if (processError) processError();
         dispatch({ type: 'rejected', error });
+        setTimeout(() => {
+          dispatch({
+            type: 'complete',
+          });
+        }, 1800);
       });
   }, []);
+
+  const isActive = useMemo(
+    () =>
+      state.status === 'pending' ||
+      state.status === 'resolved' ||
+      state.status === 'rejected',
+    [state.status]
+  );
 
   const reset = useCallback(() => {
     dispatch({ type: 'idle' });
   }, []);
 
-  return { ...state, run, reset };
+  return { ...state, run, isActive, reset };
 }
 
 export default useAsync;

@@ -5,11 +5,9 @@ import axios from 'axios';
 
 import { useFetch } from './FetchContext';
 import useAsync from '../hooks/useAsync';
-import {
-  applyCorrectValueAndFlag,
-  filterArr1WithArr2,
-  sortByAscending,
-} from '../utils/processData';
+import { filterArr1WithArr2, sortByAscending } from '../utils';
+import { applyCorrectValueAndFlag } from '../utils/processData';
+import { filterDuplicateComponents } from '../utils';
 
 const DataContext = createContext();
 const { Provider } = DataContext;
@@ -35,6 +33,7 @@ function DataProvider({ children }) {
   const [strapiProductsRoot, setStrapiProductsRoot] = useState(null);
   const [shopHeightsRoot, setShopHeightsRoot] = useState(null);
   const [pressRoot, setPressRoot] = useState(null);
+  const [pressPerRowRoot, setPressPerRowRoot] = useState(null);
   const [settingsRoot, setSettingsRoot] = useState(null);
   const [imagesRoot, setImagesRoot] = useState(null);
   const [cleanDbToggle, setCleanDbToggle] = useState(true);
@@ -75,9 +74,16 @@ function DataProvider({ children }) {
   } = useAsync();
 
   const {
+    status: pressPerRowFetchStatus,
+    run: runPressPerRowFetch,
+    reset: resetPressPerRowFetch,
+  } = useAsync();
+
+  const {
     res: imagesRes,
     status: imagesFetchStatus,
     run: runImagesFetch,
+    reset: resetImagesFetch,
   } = useAsync();
 
   const {
@@ -225,17 +231,34 @@ function DataProvider({ children }) {
   }, [authFetch, pressFetchStatus, runPressFetch, strapiEndpoints.press]);
 
   useEffect(() => {
+    if (pressPerRowFetchStatus === 'idle') {
+      console.log('FETCHING PRESS ELEMENTS PER ROW...');
+      const processData = (res) => setPressPerRowRoot(res.data);
+
+      runPressPerRowFetch(
+        authFetch.get(strapiEndpoints.pressElementsPerRow),
+        processData
+      );
+    }
+  }, [
+    authFetch,
+    pressPerRowFetchStatus,
+    runPressPerRowFetch,
+    strapiEndpoints.pressElementsPerRow,
+  ]);
+
+  useEffect(() => {
     if (settingsFetchStatus === 'idle') {
       console.log('FETCHING SETTINGS...');
       const processData = (res) => setSettingsRoot(res.data);
 
-      runSettingsFetch(authFetch.get(strapiEndpoints.shopHeights), processData);
+      runSettingsFetch(authFetch.get(strapiEndpoints.settings), processData);
     }
   }, [
     authFetch,
     runSettingsFetch,
     settingsFetchStatus,
-    strapiEndpoints.shopHeights,
+    strapiEndpoints.settings,
   ]);
 
   useEffect(() => {
@@ -277,7 +300,7 @@ function DataProvider({ children }) {
         .map((element) => element.image);
       const usedImages = [portfolioImages, productImages, pressImages].flat();
 
-      setImagesRoot(usedImages);
+      setImagesRoot(filterDuplicateComponents(usedImages));
     }
   }, [portfolioRoot, pressRoot, shopifyProductsData, strapiProductsRoot]);
 
@@ -349,31 +372,52 @@ function DataProvider({ children }) {
   ]);
 
   const value = {
-    portfolioRoot,
-    setPortfolioRoot,
-    portfolioFetchStatus,
-    resetPortfolioFetch,
-    strapiProductsRoot,
-    setStrapiProductsRoot,
-    strapiProductsFetchStatus,
-    resetStrapiProductsFetch,
-    shopifyProductsData,
-    shopifyProductsFetchStatus,
-    resetShopifyProductsFetch,
-    shopHeightsRoot,
-    setShopHeightsRoot,
-    shopHeightsFetchStatus,
-    resetShopHeightsFetch,
-    pressRoot,
-    setPressRoot,
-    pressFetchStatus,
-    resetPressFetch,
-    settingsRoot,
-    setSettingsRoot,
-    settingsFetchStatus,
-    resetSettingsFetch,
-    imagesRoot,
-    setImagesRoot,
+    portfolioRoot: {
+      data: portfolioRoot,
+      setData: setPortfolioRoot,
+      fetchStatus: portfolioFetchStatus,
+      resetFetch: resetPortfolioFetch,
+    },
+    strapiProductsRoot: {
+      data: strapiProductsRoot,
+      setData: setStrapiProductsRoot,
+      fetchStatus: strapiProductsFetchStatus,
+      resetFetch: resetStrapiProductsFetch,
+    },
+    shopifyProducts: {
+      data: shopifyProductsData,
+      fetchStatus: shopifyProductsFetchStatus,
+      resetFetch: resetShopifyProductsFetch,
+    },
+    shopHeightsRoot: {
+      data: shopHeightsRoot,
+      setData: setShopHeightsRoot,
+      fetchStatus: shopHeightsFetchStatus,
+      resetFetch: resetShopHeightsFetch,
+    },
+    pressRoot: {
+      data: pressRoot,
+      setData: setPressRoot,
+      fetchStatus: pressFetchStatus,
+      resetFetch: resetPressFetch,
+    },
+    pressPerRowRoot: {
+      data: pressPerRowRoot,
+      setData: setPressPerRowRoot,
+      fetchStatus: pressPerRowFetchStatus,
+      resetFetch: resetPressPerRowFetch,
+    },
+    settingsRoot: {
+      data: settingsRoot,
+      setData: setSettingsRoot,
+      fetchStatus: settingsFetchStatus,
+      resetFetch: resetSettingsFetch,
+    },
+    imagesRoot: {
+      data: imagesRoot,
+      fetchStatus: imagesFetchStatus,
+      resetFetch: resetImagesFetch,
+    },
   };
 
   return <Provider value={value}>{children}</Provider>;

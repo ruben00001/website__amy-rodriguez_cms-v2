@@ -110,9 +110,9 @@ const confirmButton = (theme) =>
     fontWeight: 800,
   });
 
-function EditElementTextPopup({ close, element, updateElement }) {
-  const [title, setTitle] = useState(element.title);
-  const [link, setLink] = useState(element.linkUrl);
+function EditTextPopup({ show, close, element, updateElement }) {
+  const [title, setTitle] = useState(element?.title);
+  const [link, setLink] = useState(element?.linkUrl);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -122,7 +122,7 @@ function EditElementTextPopup({ close, element, updateElement }) {
   }
 
   return (
-    <div css={container}>
+    <div css={[container, !show && { display: 'none' }]}>
       <div css={body}>
         <div css={header}>
           <FontAwesomeIcon
@@ -179,4 +179,4 @@ function EditElementTextPopup({ close, element, updateElement }) {
   );
 }
 
-export default EditElementTextPopup;
+export default EditTextPopup;

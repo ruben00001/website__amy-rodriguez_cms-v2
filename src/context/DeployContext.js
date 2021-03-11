@@ -1,8 +1,8 @@
 import React, {
   createContext,
   useContext,
-  useEffect,
   useLayoutEffect,
+  useMemo,
 } from 'react';
 import NetlifyAPI from 'netlify';
 
@@ -12,106 +12,72 @@ import { useState } from 'react';
 const DeployContext = createContext();
 const { Provider } = DeployContext;
 
-// should probs change undeployedSave to udeployedSave status and provide string consts for each state
-// undeployedSave should reset on each page
 const DeployProvider = ({ children }) => {
-  const [undeployedSave, setUndeployedSave] = useState(true); // initial value is null because don't want to disable deploy button on startup since don't know if there was a previously undeployed save
-  const [isCreatingBuildOrDeploying, setIsCreatingBuildOrDeploying] = useState(
-    false
-  );
-  const [deployStatus, setDeployStatus] = useState(null); // deployStatus needed because deployData resets with each fetch, which in turn would reset the UI (as deployData becomes null)
-  // const [deploy_id, setDeploy_id] = useState(null);
-  // const [buildData, setBuildData] = useState({ state: 'idle' });
+  const [undeployedSave, setUndeployedSave] = useState(true);
+  const [showDeployInfo, setShowDeployInfo] = useState(true);
+  const [
+    latestSiteBuildOnStartupAttempted,
+    setLatestSiteBuildOnStartupAttempted,
+  ] = useState(false);
+  const [deployDataCopy, setDeployDataCopy] = useState(null); // deployDataCopy needed because deployData resets with fetch - want UI to have access to latest deploy data at all times
+
   const {
-    data: createBuildData,
+    res: buildData,
     status: createBuildStatus,
     run: runCreateBuild,
-    reset: resetCreateBuild,
   } = useAsync();
-  const {
-    data: deployData,
-    status: fetchDeployStatus,
-    run: runFetchDeploy,
-    reset: resetFetchDeploy,
-  } = useAsync();
+  const { status: fetchDeployStatus, run: runFetchDeploy } = useAsync();
+
+  const netlifyClient = useMemo(
+    () => new NetlifyAPI('W43FJpBK-fIAz1BxbBZB3-zmn6vQn4-3PjEHIXkT-aM'),
+    []
+  );
+  const site_id =
+    process.env.NODE_ENV === 'development'
+      ? 'cf3b4320-664f-45d5-ba30-fd1e17803b87'
+      : 'd894703e-7258-4219-9edd-4fb05e77d508';
 
   useLayoutEffect(() => {
-    if (createBuildStatus === 'resolved') {
-      fetchDeploy();
-    }
-    if (createBuildStatus === 'rejected') {
-      setUndeployedSave(true);
+    if (!latestSiteBuildOnStartupAttempted && netlifyClient) {
+      setLatestSiteBuildOnStartupAttempted(true);
+      const handleLatestSiteBuildDeploy = async () => {
+        const builds = await netlifyClient.listSiteBuilds({ site_id });
+        const latestBuild = builds[0];
+
+        fetchDeploy(latestBuild.deploy_id);
+      };
+      handleLatestSiteBuildDeploy();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [createBuildStatus]);
+  }, [latestSiteBuildOnStartupAttempted, netlifyClient]);
 
-  useLayoutEffect(() => {
-    if (fetchDeployStatus === 'resolved') {
-      const deployStatus = deployData.state;
-      setDeployStatus(deployStatus);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchDeployStatus]);
+  const fetchDeploy = (deploy_id) =>
+    runFetchDeploy(netlifyClient.getDeploy({ deploy_id }), (res) =>
+      setDeployDataCopy(res)
+    );
 
-  useLayoutEffect(() => {
-    if (deployStatus === 'ready') {
-      setIsCreatingBuildOrDeploying(false);
-    }
-    if (deployStatus === 'error') {
-      setUndeployedSave(true);
-      setIsCreatingBuildOrDeploying(false);
-    }
-  }, [deployStatus]);
-
-  function createSiteBuild() {
-    if (deployStatus) {
-      resetBuildAndDeploy();
-    }
-
-    console.log('CREATING SITE BUILD...');
+  const handleCreateSiteBuild = () => {
     setUndeployedSave(false);
-    setIsCreatingBuildOrDeploying(true);
-    const site_id =
-      process.env.NODE_ENV === 'development'
-        ? 'cf3b4320-664f-45d5-ba30-fd1e17803b87'
-        : 'd894703e-7258-4219-9edd-4fb05e77d508';
-    const client = new NetlifyAPI(
-      'W43FJpBK-fIAz1BxbBZB3-zmn6vQn4-3PjEHIXkT-aM'
+    runCreateBuild(
+      netlifyClient.createSiteBuild({ site_id }),
+      (res) => fetchDeploy(res.deploy_id),
+      () => setUndeployedSave(true)
     );
-
-    runCreateBuild(client.createSiteBuild({ site_id }));
-  }
-
-  function fetchDeploy() {
-    console.log('FETCHING DEPLOY...');
-    const client = new NetlifyAPI(
-      'W43FJpBK-fIAz1BxbBZB3-zmn6vQn4-3PjEHIXkT-aM'
-    );
-    // const deploy_id = 'aboceunoeuh'; // FAIL
-    const { deploy_id } = createBuildData;
-    runFetchDeploy(client.getDeploy({ deploy_id }));
-  }
-
-  function resetBuildAndDeploy() {
-    setIsCreatingBuildOrDeploying(false);
-    setDeployStatus(null);
-    resetCreateBuild();
-    resetFetchDeploy();
-  }
+  };
 
   return (
     <Provider
       value={{
         undeployedSave,
         setUndeployedSave,
-        createSiteBuild,
+        showDeployInfo,
+        setShowDeployInfo,
+        latestSiteBuildOnStartupAttempted,
+        deployData: deployDataCopy,
         createBuildStatus,
-        fetchDeploy,
         fetchDeployStatus,
-        deployData,
-        deployStatus,
-        isCreatingBuildOrDeploying,
-        resetBuildAndDeploy,
+        fetchDeploy: () => fetchDeploy(buildData.deploy_id),
+        createSiteBuild: handleCreateSiteBuild,
       }}
     >
       {children}

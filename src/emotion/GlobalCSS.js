@@ -37,6 +37,10 @@ const GlobalCSS = () => (
         box-shadow: 0 0 0 30px white inset !important;
         -webkit-box-shadow: 0 0 0 30px white inset !important;
       }
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button {
+        margin-left: 5px;
+      }
     `}
   />
 );

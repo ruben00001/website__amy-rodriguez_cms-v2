@@ -2,10 +2,7 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/core';
-
-const container = css({
-  position: 'relative',
-});
+import React from 'react';
 
 const guideLine = css({
   position: 'absolute',
@@ -42,7 +39,6 @@ const right = css({
 });
 
 function Guidelines({
-  children,
   parentWidth,
   parentHeight,
   elementPosition,
@@ -67,8 +63,7 @@ function Guidelines({
   }
 
   return (
-    <div css={container}>
-      {children}
+    <React.Fragment>
       <div
         css={[
           guideLine,
@@ -124,7 +119,7 @@ function Guidelines({
           },
         ]}
       />
-    </div>
+    </React.Fragment>
   );
 }
 

@@ -16,7 +16,7 @@ const container = css({
   zIndex: 500,
   position: 'fixed',
   bottom: 5,
-  right: 5,
+  right: 10,
   opacity: 0.9,
 });
 
@@ -62,9 +62,10 @@ function Settings() {
   const [show, setShow] = useState(false);
   const [toggleSettingsUpdate, setToggleSettingsUpdate] = useState(false);
 
-  const { settingsRoot, setSettingsRoot } = useData();
-  const tooltips = settingsRoot?.tooltips;
-  const { run: runSave, status: saveStatus, reset: resetSave } = useAsync();
+  const { settingsRoot } = useData();
+  const tooltips = settingsRoot?.data?.tooltips;
+  const { run: runSave, status: saveStatus } = useAsync();
+
   const { authFetch, strapiEndpoints } = useFetch();
 
   useEffect(() => {
@@ -75,7 +76,7 @@ function Settings() {
       const tooltipsCopy = produce(tooltips, (draft) => draft);
 
       setToggleSettingsUpdate(false);
-      setSettingsRoot(
+      settingsRoot.setData(
         produce((draft) => {
           draft.tooltips = !tooltipsCopy;
         })
@@ -85,23 +86,19 @@ function Settings() {
   }, [
     authFetch,
     runSave,
-    setSettingsRoot,
+    settingsRoot,
     strapiEndpoints.settings,
     toggleSettingsUpdate,
     tooltips,
   ]);
 
-  useEffect(() => {
-    if (saveStatus === 'resolved' || saveStatus === 'rejected') {
-      setTimeout(() => {
-        resetSave();
-      }, 1800);
-    }
-  }, [resetSave, saveStatus]);
-
   return (
-    <div css={[container, button]}>
-      <FontAwesomeIcon icon={faCogs} onClick={() => setShow((show) => !show)} />
+    <div css={container}>
+      <FontAwesomeIcon
+        css={button}
+        icon={faCogs}
+        onClick={() => setShow((show) => !show)}
+      />
       <div css={[menu, !show && { opacity: 0 }]}>
         <button css={button} onClick={() => setToggleSettingsUpdate(true)}>
           <p>{tooltips ? 'Turn off tooltips' : 'Turn on tooltips'}</p>

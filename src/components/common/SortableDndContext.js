@@ -5,10 +5,14 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
+import {
+  arrayMove,
+  rectSortingStrategy,
+  SortableContext,
+} from '@dnd-kit/sortable';
 import { restrictToParentElement } from '@dnd-kit/modifiers';
 
-function PressDndContext({ children, updateData, setUnsavedChange }) {
+function SortableDndContext({ children, items, updateData, setUnsavedChange }) {
   const sensors = useSensors(useSensor(PointerSensor));
 
   function handleDragReorder(event) {
@@ -33,15 +37,11 @@ function PressDndContext({ children, updateData, setUnsavedChange }) {
       autoScroll={false}
       modifiers={[restrictToParentElement]}
     >
-      {children}
-      {/* <SortableContext
-        items={portfolioDataModified.map((page) => page.id)}
-        strategy={rectSortingStrategy}
-      >
+      <SortableContext items={items} strategy={rectSortingStrategy}>
         {children}
-      </SortableContext> */}
+      </SortableContext>
     </DndContext>
   );
 }
 
-export default PressDndContext;
+export default SortableDndContext;

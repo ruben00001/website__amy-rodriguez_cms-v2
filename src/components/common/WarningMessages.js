@@ -8,8 +8,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 const container = css({
   zIndex: 10,
   position: 'absolute',
-  top: 0,
   right: 0,
+  bottom: -5,
+  transform: 'translateY(100%)',
   display: 'flex',
   justifyContent: 'flex-end',
   flexWrap: 'wrap',

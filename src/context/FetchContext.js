@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 
@@ -71,6 +71,15 @@ const FetchProvider = ({ children }) => {
     }
   );
 
+  const mapFetches = (elements, method, contentType) =>
+    elements.map((element) => {
+      const fetch = authFetch[method];
+      const endpointBase = strapiEndpoints[contentType];
+      const endpoint =
+        method === 'post' ? endpointBase : `${endpointBase}/${element.id}`;
+      return fetch(endpoint, element);
+    });
+
   const strapiEndpoints = {
     login: 'auth/local',
     images: 'images',
@@ -79,6 +88,7 @@ const FetchProvider = ({ children }) => {
     shopHeights: 'shop-home-heights',
     products: 'products',
     press: 'press-elements',
+    pressElementsPerRow: 'press-elements-per-rows',
     settings: 'settings',
   };
 
@@ -89,6 +99,7 @@ const FetchProvider = ({ children }) => {
         authFetch,
         authFormFetch,
         strapiEndpoints,
+        mapFetches,
       }}
     >
       {children}

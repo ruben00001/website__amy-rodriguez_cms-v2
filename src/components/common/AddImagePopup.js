@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import usePostImageUpload from '../../hooks/usePostImageUpload';
-import { selectImage } from '../../utils';
+import { selectImage } from '../../utils/contentPageUtils';
 import { button } from './styles';
 
 import { useLayoutEffect } from 'react';

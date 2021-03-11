@@ -22,7 +22,6 @@ const pagePlaceholder = css({
 const pageNumber = (theme) =>
   css({
     position: 'absolute',
-    // transform: 'translateX(-100%) rotate(-90deg) ',
     transform: 'rotate(-90deg) translate(-50%, -25px)',
     transformOrigin: 'left top',
     top: '50%',
@@ -31,7 +30,7 @@ const pageNumber = (theme) =>
     color: theme.colors.midgrey,
   });
 
-export function PageNumbers({ numberPages }) {
+export default function PageNumbers({ numberPages }) {
   const placeholderArray = createPlaceholderArray(
     numberPages < 6 ? numberPages - 1 : 5
   );
