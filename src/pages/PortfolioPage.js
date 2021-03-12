@@ -52,31 +52,8 @@ const canvas = css(canvasDefault, {
 
 function Content() {
   const [imageComponentsModified, setImageComponentsModified] = useState([]);
-  const [controlUsed, setControlUsed] = useState(null);
+  const [controlUsed, setControlUsed] = useState(false);
   const [showEditImagePopup, setShowEditImagePopup] = useState(false);
-
-  const componentsWithErrors = useMemo(() => {
-    if (imageComponentsModified.length < 2) {
-      return [];
-    }
-
-    const componentsWithErrors = [];
-    const componentsSorted = produce(imageComponentsModified, (draft) =>
-      sortByAscending(draft, 'order')
-    );
-    for (let i = 0; i < componentsSorted.length; i++) {
-      const order = componentsSorted[i].order;
-      const nextOrder = componentsSorted[i + 1]?.order;
-      if (!nextOrder) break;
-      if (order === nextOrder) {
-        componentsWithErrors.push(componentsSorted[i]);
-        componentsWithErrors.push(componentsSorted[i + 1]);
-        i++; // i++ definitely works?
-      }
-    }
-
-    return componentsWithErrors;
-  }, [imageComponentsModified]);
 
   const {
     setUnsavedChange,
@@ -110,7 +87,7 @@ function Content() {
 
   // HELPERS
 
-  function handlePosition(component) {
+  function handleSelectPosition(component) {
     const { x, y } = selectComponent(
       component.positions,
       device,
@@ -120,6 +97,18 @@ function Content() {
       x: calcPercentageValue(x, canvasWidth),
       y: calcPercentageValue(y, singleScreenCanvasHeight),
     };
+  }
+
+  function hasError(component) {
+    const orderErrorData = errors.find((error) => error.type === 'order');
+
+    if (!orderErrorData) return false;
+
+    const componentsWithOrderError = orderErrorData.components;
+
+    return componentsWithOrderError.find(
+      (componentWithOrderError) => componentWithOrderError.id === component.id
+    );
   }
 
   // UPDATE MODIFIED DATA
@@ -229,6 +218,40 @@ function Content() {
     );
   }
 
+  // DERIVED DATA
+
+  const errors = useMemo(() => {
+    if (imageComponentsModified?.length < 2) {
+      return [];
+    }
+    const errors = [];
+
+    const componentsWithOrderError = [];
+    const componentsSorted = produce(imageComponentsModified, (draft) =>
+      sortByAscending(draft, 'order')
+    );
+    for (let i = 0; i < componentsSorted.length; i++) {
+      const order = componentsSorted[i].order;
+      const nextOrder = componentsSorted[i + 1]?.order;
+      if (!nextOrder) break;
+      if (order === nextOrder) {
+        componentsWithOrderError.push(componentsSorted[i]);
+        componentsWithOrderError.push(componentsSorted[i + 1]);
+        i++; // i++ definitely works?
+      }
+    }
+
+    if (componentsWithOrderError.length) {
+      errors.push({
+        type: 'order',
+        message: "Ensure no duplication of image 'orders'.",
+        components: componentsWithOrderError,
+      });
+    }
+
+    return errors;
+  }, [imageComponentsModified]);
+
   return (
     <ContentPageWrapper
       // rootDataFetchStatus={portfolioRoot.fetchStatus}
@@ -242,9 +265,7 @@ function Content() {
         save,
         back: '/portfolio',
       }}
-      errors={{
-        order: componentsWithErrors && componentsWithErrors[0], // this should be worked out here rather than in Ctrl Panel?
-      }}
+      errors={errors}
       editImagePopup={
         <EditImagePopup
           show={showEditImagePopup}
@@ -269,7 +290,7 @@ function Content() {
               width={
                 selectComponent(component.widths, device, 'aspectRatio').value
               }
-              position={handlePosition(component)}
+              position={handleSelectPosition(component)}
               zIndex={imageComponentsModified.length - component.layer}
               updatePosition={(newValue) =>
                 handleUpdatePositionOrWidth(component, 'positions', newValue)
@@ -299,11 +320,9 @@ function Content() {
                   handleUpdateOrderOrLayer(component, 'layer', newValue)
                 }
                 deleteElement={() => handleDeleteElement(component)}
-                setControlUsed={() => setControlUsed(component)}
-                setControlNotUsed={() => setControlUsed(null)}
                 controlUsed={controlUsed}
-                controlUsedByThis={component.id === controlUsed?.id}
-                error={findElement(component.id, componentsWithErrors)}
+                setControlUsed={setControlUsed}
+                error={hasError(component)}
               />
             </RndElement>
           ))}

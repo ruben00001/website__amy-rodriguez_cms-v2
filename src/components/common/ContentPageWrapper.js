@@ -3,11 +3,10 @@
 
 import { jsx, css } from '@emotion/react';
 import React from 'react';
-
-import { useContentPage } from '../../context/ContentPageContext';
-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown, faArrowUp } from '@fortawesome/free-solid-svg-icons';
+
+import { useContentPage } from '../../context/ContentPageContext';
 
 import { scrollToBottom, scrollToTop } from '../../utils';
 
@@ -18,6 +17,7 @@ import Settings from './Settings';
 import RouterPrompt from './RouterPrompt';
 
 import { button, fetchDisable } from './styles';
+import useCloseTabWarning from '../../hooks/useCloseTabWarning';
 
 const container = (theme) =>
   css({
@@ -82,6 +82,8 @@ const ContentPageWrapper = ({
     singleScreenBodyHeight,
     controlPanelHeight,
   } = useContentPage();
+
+  useCloseTabWarning(unsavedChange);
 
   return (
     <div

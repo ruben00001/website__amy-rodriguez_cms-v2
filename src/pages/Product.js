@@ -37,6 +37,7 @@ import ImageElement from '../components/product/ImageElement';
 import EditImagePopup from '../components/common/EditImagePopup';
 import TextElement from '../components/product/TextElement';
 import TextAlignmentElement from '../components/product/TextAlignmentElement';
+import { processSaveResData } from '../utils/processData';
 
 const canvas = css(canvasDefault, {
   position: 'absolute',
@@ -44,23 +45,13 @@ const canvas = css(canvasDefault, {
   transform: 'translateX(-50%)',
 });
 
-/* NOTES
-  - canvas should be centered vertically
-*/
-
 function Content() {
   const [productModified, setProductModified] = useState(null);
+  const [imageComponentControlUsed, setImageComponentControlUsed] = useState(
+    false
+  );
   const [showEditImagePopup, setShowEditImagePopup] = useState(false);
   const [textElementWidths, setTextElementWidths] = useState({});
-  console.log(
-    '🚀 ~ file: Product.js ~ line 55 ~ Content ~ textElementWidths',
-    textElementWidths
-  );
-
-  // console.log(
-  //   '🚀 ~ file: Product.js ~ line 18 ~ Product ~ productModified',
-  //   productModified
-  // );
 
   // HOOKS
 
@@ -95,9 +86,6 @@ function Content() {
     }
 
     const strapiProductProcessed = produce(strapiProduct, (draft) => {
-      delete draft.shopHomeImgPositions;
-      delete draft.shopHomeImgWidths;
-
       for (const [key, value] of Object.entries(draft)) {
         if (value === null || (key === 'textAlignmentPosition' && !value[0])) {
           draft[key] = defaultProductValues[key];
@@ -138,19 +126,6 @@ function Content() {
     };
   }
 
-  const handleSelectAlignmentPosition = () => {
-    const component = selectComponent(
-      productModified.textAlignmentPosition,
-      device,
-      'aspectRatio'
-    );
-
-    return {
-      x: calcPercentageValue(component.value, canvasWidth),
-      y: 0,
-    };
-  };
-
   function alignText(alignment) {
     setProductModified(
       produce((draft) => {
@@ -179,6 +154,18 @@ function Content() {
           }
         });
       })
+    );
+  }
+
+  function hasError(component) {
+    const orderErrorData = errors.find((error) => error.type === 'order');
+
+    if (!orderErrorData) return false;
+
+    const componentsWithOrderError = orderErrorData.components;
+
+    return componentsWithOrderError.find(
+      (componentWithOrderError) => componentWithOrderError.id === component.id
     );
   }
 
@@ -303,7 +290,26 @@ function Content() {
       setUnsavedChange(false);
     });
 
-  function save() {}
+  function save() {
+    function handleSaveResponses(responses) {
+      processSaveResData(responses, strapiProductsRoot.setData);
+    }
+
+    const productProcessed = produce(productModified, (draft) => {
+      draft.images.forEach((imageComponent) => {
+        delete imageComponent.id;
+      });
+
+      delete draft.descriptionJsx;
+      delete draft.price;
+      delete draft.title;
+    });
+
+    handleSave(
+      [mapFetches([productProcessed], 'put', 'products')],
+      handleSaveResponses
+    );
+  }
 
   // DERIVED DATA
 
@@ -324,11 +330,89 @@ function Content() {
     [productModified]
   );
 
-  const textAlignmentPosition = useMemo(
-    () => (productModified ? handleSelectAlignmentPosition() : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [productModified]
-  );
+  const textAlignmentPosition = useMemo(() => {
+    if (!canvasWidth || !device || !productModified) return null;
+
+    const component = selectComponent(
+      productModified.textAlignmentPosition,
+      device,
+      'aspectRatio'
+    );
+
+    return {
+      x: calcPercentageValue(component.value, canvasWidth),
+      y: 0,
+    };
+  }, [canvasWidth, device, productModified]);
+
+  const errors = useMemo(() => {
+    if (!productModified) return [];
+
+    const errors = [];
+
+    const imageComponents = productModified.images;
+
+    // no images
+    if (!imageComponents.length)
+      errors.push({
+        type: 'noImage',
+        message: "Add an image, otherwise, this product won't be displayed.",
+      });
+
+    // no main image
+    if (imageComponents.length) {
+      const mainImage = imageComponents.find(
+        (image) => image.shopHomeStatus === 'main'
+      );
+      if (!mainImage)
+        errors.push({
+          type: 'noMainImage',
+          message: 'Select an image to appear in the shop.',
+        });
+    }
+
+    // image order
+    if (imageComponents.length > 1) {
+      const componentsWithOrderError = [];
+
+      const componentsSorted = produce(imageComponents, (draft) =>
+        sortByAscending(draft, 'order')
+      );
+      for (let i = 0; i < componentsSorted.length; i++) {
+        const order = componentsSorted[i].order;
+        const nextOrder = componentsSorted[i + 1]?.order;
+        if (!nextOrder) break;
+        if (order === nextOrder) {
+          componentsWithOrderError.push(componentsSorted[i]);
+          componentsWithOrderError.push(componentsSorted[i + 1]);
+          i++; // i++ definitely works?
+        }
+      }
+
+      if (componentsWithOrderError.length) {
+        errors.push({
+          type: 'order',
+          message: "Ensure no duplication of image 'orders'.",
+          components: componentsWithOrderError,
+        });
+      }
+    }
+
+    return errors;
+  }, [productModified]);
+
+  const fontSizeDefault = useMemo(() => {
+    switch (true) {
+      case canvasWidth >= 1100:
+        return 14;
+      case canvasWidth < 1100:
+        return 13;
+      case canvasWidth < 600:
+        return 12;
+      default:
+        return 14;
+    }
+  }, [canvasWidth]);
 
   return (
     <ContentPageWrapper
@@ -341,6 +425,7 @@ function Content() {
         save,
         back: '/shop',
       }}
+      errors={errors}
       editImagePopup={
         <EditImagePopup
           show={showEditImagePopup}
@@ -401,6 +486,7 @@ function Content() {
                     shopHomeStatus={component.shopHomeStatus}
                     order={component.order}
                     layer={component.layer}
+                    hasError={hasError(component)}
                     updateShopHomeStatus={() =>
                       handleUpdateShopHomeStatus(component)
                     }
@@ -411,6 +497,8 @@ function Content() {
                       handleUpdateOrderOrLayer(component, 'layer', newValue)
                     }
                     deleteElement={() => handleDeleteImage(component)}
+                    imageComponentControlUsed={imageComponentControlUsed}
+                    setImageComponentControlUsed={setImageComponentControlUsed}
                   />
                 </RndElement>
               ))}
@@ -428,6 +516,25 @@ function Content() {
                 >
                   <TextElement
                     text={textData.text}
+                    fontSize={
+                      textData.key === 'productViewTitle'
+                        ? fontSizeDefault + 1
+                        : fontSizeDefault
+                    }
+                    fontWeight={
+                      textData.key === 'productViewTitle' ||
+                      textData.key === 'productViewPrice'
+                        ? 'bold'
+                        : 400
+                    }
+                    color={
+                      textData.key === 'productDiscount' ? 'grey' : 'black'
+                    }
+                    textDecoration={
+                      textData.key === 'productDiscount'
+                        ? 'line-through'
+                        : 'none'
+                    }
                     canvasWidth={canvasWidth}
                     canvasHeight={singleScreenCanvasHeight}
                     widthSet={textElementWidths[textData.key]}
@@ -439,21 +546,23 @@ function Content() {
                   />
                 </RndElement>
               ))}
-              <RndElement
-                position={textAlignmentPosition}
-                width="20"
-                widthUnit="px"
-                height={singleScreenCanvasHeight}
-                dragAxis="x"
-                updatePosition={(newValue) =>
-                  handleUpdatePositionOrWidth({
-                    productField: 'textAlignmentPosition',
-                    newValue,
-                  })
-                }
-              >
-                <TextAlignmentElement alignText={alignText} />
-              </RndElement>
+              {textAlignmentPosition && (
+                <RndElement
+                  position={textAlignmentPosition}
+                  width="1"
+                  widthUnit="px"
+                  height={singleScreenCanvasHeight}
+                  dragAxis="x"
+                  updatePosition={(newValue) =>
+                    handleUpdatePositionOrWidth({
+                      productField: 'textAlignmentPosition',
+                      newValue,
+                    })
+                  }
+                >
+                  <TextAlignmentElement alignText={alignText} />
+                </RndElement>
+              )}
             </React.Fragment>
           )}
         </div>

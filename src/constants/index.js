@@ -16,7 +16,7 @@ const defaultProductValues = {
     fontWeights: [{ aspectRatio: 1.8, value: 400 }],
   },
   productDiscount: {
-    positions: [{ aspectRatio: 1.8, x: 80, y: 60 }],
+    positions: [{ aspectRatio: 1.8, x: 80, y: 40 }],
     fontSizes: [{ aspectRatio: 1.8, value: 20 }],
     fontWeights: [{ aspectRatio: 1.8, value: 400 }],
   },

@@ -2,13 +2,16 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+
 import { useContentPage } from '../../context/ContentPageContext';
 import useClickOutside from '../../hooks/useClickOutside';
+
 import LogoutButton from './LogoutButton';
+
 import { button } from './styles';
 
 const container = css({

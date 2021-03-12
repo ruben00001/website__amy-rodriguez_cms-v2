@@ -19,6 +19,10 @@ function TextElement({
   setDisableRnd,
   position,
   text,
+  fontSize,
+  fontWeight,
+  color,
+  textDecoration,
   canvasWidth,
   canvasHeight,
   widthSet,
@@ -35,7 +39,10 @@ function TextElement({
   }, [ref, setWidth, widthSet]);
 
   return (
-    <div css={[container]} ref={ref}>
+    <div
+      css={[container, { fontSize, fontWeight, color, textDecoration }]}
+      ref={ref}
+    >
       {text}
       <ElementControls
         show={hovered && !rndActive}

@@ -42,13 +42,20 @@ const messageIcon = css({
 
 function WarningMessages({ errors }) {
   return (
-    <div css={container}>
-      {errors.order && (
+    <div css={[container, !errors?.length && { display: 'none' }]}>
+      {errors &&
+        errors.map((error, i) => (
+          <div css={message} key={i}>
+            <FontAwesomeIcon css={messageIcon} icon={faExclamation} />
+            <p>{error.message}</p>
+          </div>
+        ))}
+      {/* {errors.order && (
         <div css={message}>
           <FontAwesomeIcon css={messageIcon} icon={faExclamation} />
           <p>Please ensure no duplication of image 'orders'</p>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

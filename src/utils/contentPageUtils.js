@@ -1,5 +1,5 @@
 import produce from 'immer';
-import { findElement, sortByAscending } from '.';
+import { sortByAscending } from '.';
 
 const interpretMultipleFetchStatuses = (
   status1,
@@ -73,10 +73,10 @@ function createTemporaryUniqueId(components) {
 
 function createImageComponent({ id, orderAndLayerValue, image, device, page }) {
   const deviceAspectRatio = device ? device.aspectRatio : 1.8;
-  const landscapePosition = { aspectRatio: deviceAspectRatio, x: 0, y: -20 };
+  const landscapePosition = { aspectRatio: 1.8, x: 0, y: -10 };
   const portraitPosition = {
-    aspectRatio: deviceAspectRatio,
-    x: 102,
+    aspectRatio: 0.75,
+    x: -2,
     y: 0,
   };
 
@@ -84,12 +84,8 @@ function createImageComponent({ id, orderAndLayerValue, image, device, page }) {
     id: id,
     layer: orderAndLayerValue,
     order: orderAndLayerValue,
-    positions: [
-      device?.aspectRatio > 1 || page === 'shop'
-        ? landscapePosition
-        : portraitPosition,
-    ],
-    widths: [{ aspectRatio: deviceAspectRatio, value: 20 }],
+    positions: [landscapePosition, portraitPosition],
+    widths: [{ aspectRatio: deviceAspectRatio, value: 5 }],
     image: image,
     new: true,
   };

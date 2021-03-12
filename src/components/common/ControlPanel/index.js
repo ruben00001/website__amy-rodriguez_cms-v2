@@ -231,14 +231,6 @@ function ControlPanel({ controls, errors }) {
   const [showNavigationMenu, setShowNavigationMenu] = useState(false);
   const [selectOptionsShown, setSelectOptionsShown] = useState(false);
 
-  const isError = useMemo(() => {
-    if (!errors) return false;
-    for (const [, value] of Object.entries(errors)) {
-      if (value) return true;
-    }
-    return false;
-  }, [errors]);
-
   const {
     page,
     unsavedChange,
@@ -265,6 +257,12 @@ function ControlPanel({ controls, errors }) {
 
     setControlPanelHeight(height);
   };
+
+  const isSaveBlockingError = useMemo(() => {
+    if (!errors) return false;
+    if (!errors.length) return false;
+    return true;
+  }, [errors]);
 
   return (
     <div css={[container, saveIsActive && fetchDisable]} ref={ref}>
@@ -353,11 +351,19 @@ function ControlPanel({ controls, errors }) {
             </div>
           </Tooltip>
         </div>
-        <Tooltip message="Nothing to save" disable={unsavedChange}>
+        <Tooltip
+          message={
+            isSaveBlockingError ? 'Remove errors to save.' : 'Nothing to save.'
+          }
+          disable={unsavedChange && !isSaveBlockingError}
+        >
           <div
-            css={[saveButton, (isError || !unsavedChange) && disableButton]}
+            css={[
+              saveButton,
+              (!unsavedChange || isSaveBlockingError) && disableButton,
+            ]}
             onClick={() => {
-              if (!isError && unsavedChange) controls.save();
+              if (unsavedChange && !isSaveBlockingError) controls.save();
             }}
           >
             <p>Save</p>
@@ -404,7 +410,7 @@ function ControlPanel({ controls, errors }) {
           <p>BACK</p>
         </Link>
       )}
-      {isError && <WarningMessages errors={errors} />}
+      <WarningMessages errors={errors} />
     </div>
   );
 }

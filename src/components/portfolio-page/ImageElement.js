@@ -15,20 +15,6 @@ const imgStyle = css({
   width: '100%',
 });
 
-const info = (theme) =>
-  css({
-    position: 'absolute',
-    bottom: 10,
-    left: 5,
-    opacity: 0.8,
-    backgroundColor: theme.colors.verylightgrey,
-    padding: '4px 12px',
-    borderRadius: 2,
-    fontSize: 14,
-    fontWeight: 'bold',
-    whiteSpace: 'nowrap',
-  });
-
 const errorStyle = (theme) =>
   css({
     border: `2px solid ${theme.colors.red}`,
@@ -47,10 +33,8 @@ function ImageElement({
   updateOrder,
   updateLayer,
   deleteElement,
-  setControlUsed,
-  setControlNotUsed,
   controlUsed,
-  controlUsedByThis,
+  setControlUsed,
   error,
 }) {
   const [showGuidelines, setShowGuidelines] = useState(false);
@@ -59,7 +43,7 @@ function ImageElement({
     <div css={[container, error && errorStyle]}>
       <img css={imgStyle} src={src} alt="" />
       <ElementControls
-        show={hovered && !rndActive}
+        show={(hovered && !rndActive) || controlUsed}
         numberComponents={numberComponents}
         selects={[
           {
@@ -83,8 +67,8 @@ function ImageElement({
             func: deleteElement,
           },
         ]}
-        onMouseEnter={setControlUsed}
-        onMouseLeave={setControlNotUsed}
+        onMouseEnter={() => setControlUsed(true)}
+        onMouseLeave={() => setControlUsed(false)}
       />
       <Guidelines
         show={showGuidelines}
@@ -92,10 +76,6 @@ function ImageElement({
         parentHeight={canvasHeight}
         elementPosition={position}
       />
-      <div css={[info, (!controlUsed || controlUsedByThis) && { opacity: 0 }]}>
-        <p>Order: {order}</p>
-        <p>Layer: {layer}</p>
-      </div>
     </div>
   );
 }

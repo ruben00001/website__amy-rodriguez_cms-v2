@@ -7,7 +7,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-solid-svg-icons';
 
 import Logo from '../components/common/Logo';
-import { useData } from '../context/DataContext';
 import LogoutButton from '../components/common/LogoutButton';
 
 const container = css({
@@ -57,14 +56,8 @@ const shopLink = css({
 });
 
 function Landing() {
-  // const { status: dataFetchStatus } = useData();
-
   return (
     <div css={container}>
-      {/* {dataFetchStatus !== 'complete' && (
-        <InitialLoadingDataOverlay status={dataFetchStatus} />
-      )} */}
-
       <div css={header}>
         <Logo />
         <LogoutButton />

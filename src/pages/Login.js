@@ -11,12 +11,14 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import { useAuth } from '../context/AuthContext';
-import { button } from '../components/common/styles';
+import { useFetch } from '../context/FetchContext';
+
 import Input from '../components/login/Input';
 import LoadingBar from '../components/common/LoadingBar';
-import { transitionDurationAndTiming } from '../components/login/styles';
 import Logo from '../components/common/Logo';
-import { useFetch } from '../context/FetchContext';
+
+import { button } from '../components/common/styles';
+import { transitionDurationAndTiming } from '../components/login/styles';
 
 const container = css({
   display: 'flex',

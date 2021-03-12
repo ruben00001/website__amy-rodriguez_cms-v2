@@ -16,6 +16,7 @@ const globalCSSTheme = {
     lightmidgrey: '#ededed',
     midgrey: '#a3a2a2',
     midgrey_7: 'rgba(163, 162, 162, 0.7)',
+    midgrey_5: 'rgba(163, 162, 162, 0.5)',
     yellow: 'rgb(255, 215, 83)',
     purple: '#7244CE',
     loadingOverlay: 'rgba(213, 213, 213, 0.5)',

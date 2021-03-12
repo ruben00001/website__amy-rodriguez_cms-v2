@@ -15,20 +15,6 @@ const imgStyle = css({
   width: '100%',
 });
 
-const info = (theme) =>
-  css({
-    position: 'absolute',
-    bottom: 10,
-    left: 5,
-    opacity: 0.8,
-    backgroundColor: theme.colors.verylightgrey,
-    padding: '4px 12px',
-    borderRadius: 2,
-    fontSize: 14,
-    fontWeight: 'bold',
-    whiteSpace: 'nowrap',
-  });
-
 const errorStyle = (theme) =>
   css({
     border: `2px solid ${theme.colors.red}`,
@@ -46,23 +32,21 @@ function ImageElement({
   shopHomeStatus,
   order,
   layer,
+  hasError,
   updateShopHomeStatus,
   updateOrder,
   updateLayer,
   deleteElement,
-  setControlUsed,
-  setControlNotUsed,
-  controlUsed,
-  controlUsedByThis,
-  error,
+  imageComponentControlUsed,
+  setImageComponentControlUsed,
 }) {
   const [showGuidelines, setShowGuidelines] = useState(false);
 
   return (
-    <div css={[container, error && errorStyle]}>
+    <div css={[container, hasError && errorStyle]}>
       <img css={imgStyle} src={src} alt="" />
       <ElementControls
-        show={hovered && !rndActive}
+        show={(hovered && !rndActive) || imageComponentControlUsed}
         numberComponents={numberComponents}
         checkboxes={[
           {
@@ -93,8 +77,14 @@ function ImageElement({
             func: deleteElement,
           },
         ]}
-        onMouseEnter={() => setDisableRnd(true)}
-        onMouseLeave={() => setDisableRnd(false)}
+        onMouseEnter={() => {
+          setDisableRnd(true);
+          setImageComponentControlUsed(true);
+        }}
+        onMouseLeave={() => {
+          setDisableRnd(false);
+          setImageComponentControlUsed(false);
+        }}
       />
       <Guidelines
         show={showGuidelines}
@@ -102,10 +92,6 @@ function ImageElement({
         parentHeight={canvasHeight}
         elementPosition={position}
       />
-      {/* <div css={[info, (!controlUsed || controlUsedByThis) && { opacity: 0 }]}>
-        <p>Order: {order}</p>
-        <p>Layer: {layer}</p>
-      </div> */}
     </div>
   );
 }

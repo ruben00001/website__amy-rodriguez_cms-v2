@@ -10,6 +10,7 @@ import {
   faArrowUp,
   faBorderNone,
   faEdit,
+  faEye,
   faImage,
   faLayerGroup,
   faSortNumericDown,
@@ -28,7 +29,6 @@ const container = (theme) =>
     position: 'absolute',
     top: 0,
     right: 0,
-    transform: 'translateY(-100%)',
     display: 'flex',
     alignItems: 'center',
     background: theme.colors.midgrey_7,
@@ -60,6 +60,7 @@ const buttonIcons = {
   textCenter: faAlignCenter,
   textLeft: faAlignLeft,
   textRight: faAlignRight,
+  show: faEye,
 };
 
 const buttonMessages = {
@@ -75,6 +76,7 @@ const buttonMessages = {
   textCenter: "Align all text elements' center to this line.",
   textLeft: "Align all text elements' left side to this line.",
   textRight: "Align all text elements' right side to this line.",
+  show: 'Hide or show.',
 };
 
 function ElementControls({
@@ -85,6 +87,7 @@ function ElementControls({
   numberComponents,
   onMouseEnter,
   onMouseLeave,
+  transform = 'translateY(-100%)',
 }) {
   const placeHolderArray = useMemo(
     () => createPlaceholderArray(numberComponents),
@@ -93,7 +96,7 @@ function ElementControls({
 
   return (
     <div
-      css={[container, !show && { opacity: 0 }]}
+      css={[container, { transform }, !show && { opacity: 0 }]}
       onMouseEnter={() => {
         if (onMouseEnter) onMouseEnter();
       }}

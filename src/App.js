@@ -8,16 +8,24 @@ import {
 } from 'react-router-dom';
 import { ThemeProvider } from '@emotion/react';
 
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { FourOFour, Landing, Login, Portfolio, Product, Shop } from './pages';
-import { globalCSSTheme } from './emotion/themes';
-import { GlobalCSS } from './emotion/GlobalCSS';
 import { FetchProvider } from './context/FetchContext';
 import { DataProvider, useData } from './context/DataContext';
 import { DeployProvider } from './context/DeployContext';
-import Press from './pages/Press';
-import PortfolioLanding from './pages/PortfolioLanding';
-import PortfolioPage from './pages/PortfolioPage';
+
+import { AuthProvider, useAuth } from './context/AuthContext';
+import {
+  FourOFour,
+  Landing,
+  Login,
+  Product,
+  Shop,
+  PortfolioLanding,
+  PortfolioPage,
+  Press,
+} from './pages';
+
+import { globalCSSTheme } from './emotion/themes';
+import { GlobalCSS } from './emotion/GlobalCSS';
 
 const AuthenticatedRoute = ({ children, ...rest }) => {
   const { isAuthenticated } = useAuth();
