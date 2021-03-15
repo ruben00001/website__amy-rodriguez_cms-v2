@@ -89,6 +89,7 @@ const eyeIcon = css({
   position: 'absolute',
   right: 7,
   fontSize: 12,
+  cursor: 'pointer',
 });
 
 function Input({ type, loginStatus }) {
