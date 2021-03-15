@@ -2,13 +2,11 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit } from '@fortawesome/free-solid-svg-icons';
 
 import { selectImage } from '../../utils/contentPageUtils';
 
 import ElementControls from '../common/ElementControls';
+import ElementLink from '../common/ElementLink';
 
 const container = css({
   zIndex: 100,
@@ -20,23 +18,12 @@ const container = css({
   marginTop: 30,
 });
 
-const link = (theme) =>
-  css({
-    zIndex: 20,
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    opacity: 0,
-    transition: 'opacity 0.3s ease-in-out',
-    backgroundColor: 'white',
-    color: theme.colors.midgrey,
-  });
-
-export default function PortfolioElement({
-  data,
-  deletePage,
+export default function PageElement({
   hovered,
   isDragging,
+  data,
+  index,
+  deletePage,
 }) {
   const isUnsavedNewPage = data?.new;
   const { imageComponents } = data;
@@ -69,19 +56,14 @@ export default function PortfolioElement({
         show={hovered && !isDragging}
         buttons={[{ type: 'delete', func: deletePage }]}
       />
-      <Link
-        css={[link, hovered && !isDragging && { opacity: 1 }]}
-        to={`/portfolio/${data.id}`}
-        onClick={(e) => {
-          if (isUnsavedNewPage) {
-            e.preventDefault();
-            const message = 'You must save before editing a newly created page';
-            window.alert(message);
-          }
+      <ElementLink
+        show={hovered && !isDragging}
+        to={{ name: `page ${index + 1}`, link: `/portfolio/${data.id}` }}
+        prevent={{
+          condition: isUnsavedNewPage,
+          message: 'Save before editing a newly created page.',
         }}
-      >
-        <FontAwesomeIcon icon={faEdit} />
-      </Link>
+      />
     </div>
   );
 }

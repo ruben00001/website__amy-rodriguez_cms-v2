@@ -2,7 +2,8 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useResizeDetector } from 'react-resize-detector';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown, faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
@@ -31,7 +32,6 @@ const container = (theme) =>
 const body = (theme) =>
   css({
     position: 'relative',
-
     overflowY: 'visible',
     overflowX: 'hidden',
     height: '100%',
@@ -60,11 +60,6 @@ const scrollIcon = css({
   fontSize: 11,
 });
 
-/* NOTES
-  - need to handle image fetch - could be done in relevant page/image popup
-  - body should change with size of control panel
-*/
-
 const ContentPageWrapper = ({
   children,
   controls,
@@ -85,6 +80,17 @@ const ContentPageWrapper = ({
 
   useCloseTabWarning(unsavedChange);
 
+  const { height: pageHeight, ref: containerRef } = useResizeDetector();
+
+  const showScrollButtons = useMemo(() => {
+    if (!controlPanelHeight || !singleScreenBodyHeight || !pageHeight)
+      return false;
+
+    const singleScreenHeight = controlPanelHeight + singleScreenBodyHeight;
+
+    return pageHeight > singleScreenHeight * 1.1;
+  }, [controlPanelHeight, singleScreenBodyHeight, pageHeight]);
+
   return (
     <div
       css={[
@@ -94,6 +100,7 @@ const ContentPageWrapper = ({
           overflowY: 'hidden',
         },
       ]}
+      ref={containerRef}
     >
       {rootDataFetchStatus && rootDataFetchStatus !== 'complete' && (
         <LoadingOverlay
@@ -104,7 +111,7 @@ const ContentPageWrapper = ({
       )}
       <LoadingBar status={saveStatus} showStatusText={true} />
       <ControlPanel controls={controls} errors={errors} />
-      {page === 'shop' && (
+      {showScrollButtons && (
         <React.Fragment>
           <div
             css={[scrollButton, { top: controlPanelHeight + 10 }]}

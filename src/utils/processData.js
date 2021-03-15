@@ -1,11 +1,6 @@
 import produce from 'immer';
 import { sortByAscending, filterResponses } from '.';
 
-// const filterReordered = (components) =>
-//   produce(components, (draft) =>
-//     draft.filter((component, i) => !component.new && component.order !== i + 1)
-//   );
-
 const applyCorrectValueAndFlag = (component, field, index, componentToFlag) => {
   // componentToFlag gets used for Portfolio + Product image components
   if (component[field] !== index + 1) {
@@ -21,11 +16,7 @@ const rmTempFields = (components) =>
   produce(components, (draft) =>
     draft.forEach((component) => {
       if (component.new) {
-        delete component.new;
         delete component.id;
-      }
-      if (component.updated) {
-        delete component.updated;
       }
     })
   );
@@ -53,9 +44,4 @@ function processSaveResData(responses, setRootData) {
   );
 }
 
-export {
-  rmTempFields,
-  // filterReordered,
-  applyCorrectValueAndFlag,
-  processSaveResData,
-};
+export { rmTempFields, applyCorrectValueAndFlag, processSaveResData };

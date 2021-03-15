@@ -4,6 +4,7 @@
 import { jsx, css } from '@emotion/react';
 import { useLayoutEffect, useState } from 'react';
 import produce from 'immer';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useData } from '../context/DataContext';
 import {
@@ -18,8 +19,9 @@ import {
   scrollToBottom,
 } from '../utils';
 import {
+  addElement,
   confirmWrapper,
-  createTemporaryUniqueId,
+  deleteElement,
 } from '../utils/contentPageUtils';
 import {
   applyCorrectValueAndFlag,
@@ -30,21 +32,17 @@ import {
 import ContentPageWrapper from '../components/common/ContentPageWrapper';
 import SortableDndContext from '../components/common/SortableDndContext';
 import SortableElement from '../components/common/SortableElement';
-import PortfolioElement from '../components/portfolio-landing/PortfolioElement';
+import PageElement from '../components/portfolio-landing/PageElement';
 import PageNumbers from '../components/portfolio-landing/PageNumbers';
 
-const container = css({
+const body = css({
   display: 'flex',
   justifyContent: 'space-evenly',
   alignContent: 'flex-start',
   flexWrap: 'wrap',
-  padding: '10vh 0 5vh',
+  padding: '10vh 0 10vh',
   overflowX: 'hidden',
 });
-
-/* NOTES
-    - routes should be seperate? In own folder/app.js
-  */
 
 function Content() {
   const [portfolioModified, setPortfolioModified] = useState([]);
@@ -54,54 +52,42 @@ function Content() {
   const { portfolioRoot } = useData();
 
   useLayoutEffect(() => {
-    if (portfolioRoot.data) {
-      setPortfolioModified(portfolioRoot.data);
-    }
+    if (!portfolioRoot.data) return;
+    setPortfolioModified(portfolioRoot.data);
   }, [portfolioRoot.data]);
 
   function addPage() {
-    setPortfolioModified(
-      produce((draft) => {
-        const newPageId = createTemporaryUniqueId(draft);
-        const newPageComponent = {
-          id: newPageId,
-          imageComponents: [],
-          order: draft.length + 1,
-          new: true,
-        };
-        draft.push(newPageComponent);
-      })
-    );
+    const newComponent = {
+      id: uuidv4(),
+      imageComponents: [],
+      order: portfolioModified.length + 1,
+      new: true,
+    };
+    addElement(newComponent, setPortfolioModified);
+
     setUnsavedChange(true);
     scrollToBottom();
   }
 
-  function deletePage(id) {
+  const deletePage = (active) =>
     confirmWrapper('delete', () => {
       setPortfolioModified(
         produce((draft) => {
-          const pageToDeleteId = id;
-          const pageToDeleteIndex = draft.findIndex(
-            (page) => page.id === pageToDeleteId
-          );
-          draft.splice(pageToDeleteIndex, 1);
+          deleteElement(active, draft);
         })
       );
       setUnsavedChange(true);
     });
-  }
 
-  function undoChanges() {
+  const undoChanges = () =>
     confirmWrapper('undo', () => {
       setPortfolioModified(portfolioRoot.data);
       setUnsavedChange(false);
     });
-  }
 
   function save() {
-    function handleSaveResponse(responses) {
+    const handleSaveResponse = (responses) =>
       processSaveResData(responses, portfolioRoot.setData);
-    }
 
     const processedElements = produce(portfolioModified, (draft) => {
       draft.forEach((element, i) =>
@@ -112,7 +98,6 @@ function Content() {
     const newElements = filterNew(processedElements);
     const newElementsProcessed = rmTempFields(newElements);
     const updatedElements = filterUpdated(processedElements);
-    const updatedElementsProcessed = rmTempFields(updatedElements);
     const deletedElements = filterArr1WithArr2(
       portfolioRoot.data,
       portfolioModified,
@@ -122,7 +107,7 @@ function Content() {
     handleSave(
       [
         mapFetches(newElementsProcessed, 'post', 'portfolio'),
-        mapFetches(updatedElementsProcessed, 'put', 'portfolio'),
+        mapFetches(updatedElements, 'put', 'portfolio'),
         mapFetches(deletedElements, 'delete', 'portfolio'),
       ],
       handleSaveResponse
@@ -139,18 +124,19 @@ function Content() {
         save,
       }}
     >
-      <div css={container}>
+      <div css={body}>
         {portfolioModified[0] && (
           <SortableDndContext
             items={portfolioModified.map((element) => element.id)}
             updateData={setPortfolioModified}
             setUnsavedChange={setUnsavedChange}
           >
-            {portfolioModified.map((page) => (
+            {portfolioModified.map((page, i) => (
               <SortableElement element={page} key={page.id}>
-                <PortfolioElement
+                <PageElement
                   data={page}
-                  deletePage={() => deletePage(page.id)}
+                  index={i}
+                  deletePage={() => deletePage(page)}
                 />
               </SortableElement>
             ))}

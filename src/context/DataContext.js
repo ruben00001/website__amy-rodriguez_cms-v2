@@ -5,24 +5,13 @@ import axios from 'axios';
 
 import { useFetch } from './FetchContext';
 import useAsync from '../hooks/useAsync';
+
 import { filterArr1WithArr2, sortByAscending } from '../utils';
 import { applyCorrectValueAndFlag } from '../utils/processData';
 import { filterDuplicateComponents } from '../utils';
 
 const DataContext = createContext();
 const { Provider } = DataContext;
-
-/* TO DO
-  - ensure pages render with data
-  - make saves work
-  - create further abstractions: pageWrapper, processing data, saving, other components
-  - saving -> ui changes
-*/
-
-/* NOTES
-  - would be good to have the ability to change a portfolio image. Maybe then wouldn't remove imageComponents without image.
-  - async funcs are in useEffects because I read this should be. Is this correct?
-*/
 
 /* NOTES (to keep)
   - positions/widths etc. don't need to be sorted as they are handled when selected (by selectStyleDataForDevice)
@@ -100,7 +89,6 @@ function DataProvider({ children }) {
 
   useEffect(() => {
     if (portfolioFetchStatus === 'idle') {
-      console.log('FETCHING PORTFOLIO AND PROCESSING...');
       const processData = (res) => {
         const processedData = produce(res.data, (draft) => {
           sortByAscending(draft, 'order');
@@ -146,7 +134,6 @@ function DataProvider({ children }) {
 
   useEffect(() => {
     if (strapiProductsFetchStatus === 'idle') {
-      console.log('FETCHING STRAPI PRODUCTS AND PROCESSING...');
       const processData = (res) => {
         const processedData = produce(res.data, (draft) => {
           draft.forEach((product) => {
@@ -178,8 +165,6 @@ function DataProvider({ children }) {
 
   useEffect(() => {
     if (shopifyProductsFetchStatus === 'idle') {
-      console.log('FETCHING SHOPIFY PRODUCTS...');
-
       const shopifyClient = Client.buildClient({
         storefrontAccessToken: 'aec2e7a9ff50e738535be4a359037f1f',
         domain: 'amy-jewellery-x.myshopify.com',
@@ -191,7 +176,6 @@ function DataProvider({ children }) {
 
   useEffect(() => {
     if (shopHeightsFetchStatus === 'idle') {
-      console.log('FETCHING SHOP HEIGHTS...');
       const processData = (res) => setShopHeightsRoot(res.data);
 
       runShopHeightsFetch(
@@ -208,7 +192,6 @@ function DataProvider({ children }) {
 
   useEffect(() => {
     if (pressFetchStatus === 'idle') {
-      console.log('FETCHING PRESS AND PROCESSING...');
       const processData = (res) => {
         const processedData = produce(res.data, (draft) => {
           sortByAscending(draft, 'order');
@@ -232,7 +215,6 @@ function DataProvider({ children }) {
 
   useEffect(() => {
     if (pressPerRowFetchStatus === 'idle') {
-      console.log('FETCHING PRESS ELEMENTS PER ROW...');
       const processData = (res) => setPressPerRowRoot(res.data);
 
       runPressPerRowFetch(
@@ -249,7 +231,6 @@ function DataProvider({ children }) {
 
   useEffect(() => {
     if (settingsFetchStatus === 'idle') {
-      console.log('FETCHING SETTINGS...');
       const processData = (res) => setSettingsRoot(res.data);
 
       runSettingsFetch(authFetch.get(strapiEndpoints.settings), processData);
@@ -263,27 +244,18 @@ function DataProvider({ children }) {
 
   useEffect(() => {
     if (imagesFetchStatus === 'idle') {
-      console.log('FETCHING IMAGES...');
-
       runImagesFetch(authFetch.get(strapiEndpoints.images));
     }
   }, [authFetch, imagesFetchStatus, runImagesFetch, strapiEndpoints.images]);
 
   useEffect(() => {
     if (uploadsFetchStatus === 'idle') {
-      console.log('FETCHING UPLOADS...');
-
       runUploadsFetch(authFetch.get(strapiEndpoints.uploads));
     }
   }, [authFetch, runUploadsFetch, strapiEndpoints.uploads, uploadsFetchStatus]);
 
   useEffect(() => {
-    if (
-      portfolioRoot &&
-      shopifyProductsData &&
-      strapiProductsRoot &&
-      pressRoot
-    ) {
+    if (portfolioRoot && strapiProductsRoot && pressRoot) {
       // images validity checked in respective content section above
       const portfolioImages = portfolioRoot
         .map((page) =>
@@ -302,7 +274,7 @@ function DataProvider({ children }) {
 
       setImagesRoot(filterDuplicateComponents(usedImages));
     }
-  }, [portfolioRoot, pressRoot, shopifyProductsData, strapiProductsRoot]);
+  }, [portfolioRoot, pressRoot, strapiProductsRoot]);
 
   useEffect(() => {
     // CLEAN UP DATABASE
@@ -315,7 +287,6 @@ function DataProvider({ children }) {
       pressRoot &&
       uploadsRes
     ) {
-      console.log('CLEANING UP DATABASE...');
       setCleanDbToggle(false);
 
       const unusedPortfPages = filterArr1WithArr2(

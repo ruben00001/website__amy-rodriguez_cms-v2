@@ -137,12 +137,12 @@ const selectImage = (image, quality) => {
 };
 
 export {
-  interpretMultipleFetchStatuses,
-  confirmWrapper,
-  selectComponent,
-  createTemporaryUniqueId,
-  createImageComponent,
   addElement,
+  confirmWrapper,
+  createImageComponent,
+  createTemporaryUniqueId,
   deleteElement,
+  interpretMultipleFetchStatuses,
+  selectComponent,
   selectImage,
 };

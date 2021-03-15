@@ -2,6 +2,8 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
+import { useMemo, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faAlignCenter,
   faAlignLeft,
@@ -17,11 +19,12 @@ import {
   faStore,
   faTrashAlt,
 } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useMemo } from 'react';
-import { createPlaceholderArray } from '../../utils';
-import { button as buttonStyle } from '../common/styles';
+
 import Tooltip from './Tooltip';
+
+import { createPlaceholderArray } from '../../utils';
+
+import { button as buttonDefault } from '../common/styles';
 
 const container = (theme) =>
   css({
@@ -47,6 +50,14 @@ const inputContainer = css({
 
 const inputStyle = css({ marginLeft: 8, color: 'black' });
 
+const buttonStyle = css(buttonDefault, {
+  position: 'relative',
+  fontSize: 14,
+
+  '&:hover': { opacity: 1 },
+  '&:active': { opacity: 0.8 },
+});
+
 const buttonIcons = {
   order: faSortNumericDown,
   layer: faLayerGroup,
@@ -65,7 +76,7 @@ const buttonIcons = {
 
 const buttonMessages = {
   shopHomeStatus: 'Use image for shop.',
-  order: 'Order image appears on the page when clicking through.',
+  order: 'Order image appears when clicking through.',
   layer: 'Control whether image appears above or below others.',
   image: 'Edit image.',
   text: 'Change title or URL.',
@@ -89,6 +100,8 @@ function ElementControls({
   onMouseLeave,
   transform = 'translateY(-100%)',
 }) {
+  const [inputActive, setInputActive] = useState(false);
+
   const placeHolderArray = useMemo(
     () => createPlaceholderArray(numberComponents),
     [numberComponents]
@@ -123,32 +136,34 @@ function ElementControls({
       {selects &&
         numberComponents > 1 &&
         selects.map((select, i) => (
-          // <Tooltip message={buttonMessages[select.type]} key={i}>
-          <div css={[inputContainer]} key={i}>
-            <FontAwesomeIcon icon={buttonIcons[select.type]} />
-            <select
-              css={[inputStyle]}
-              value={select.value}
-              onChange={(e) => select.func(Number(e.target.value))}
-            >
-              {placeHolderArray.map((_, i) => (
-                <option value={i + 1} key={i}>
-                  {i + 1}
-                </option>
-              ))}
-            </select>
-          </div>
-          // </Tooltip>
+          <Tooltip
+            message={buttonMessages[select.type]}
+            disable={inputActive}
+            key={i}
+          >
+            <div css={[inputContainer]} key={i}>
+              <FontAwesomeIcon icon={buttonIcons[select.type]} />
+              <select
+                css={[inputStyle]}
+                value={select.value}
+                onChange={(e) => select.func(Number(e.target.value))}
+                onMouseDown={() => setInputActive(true)}
+                onClick={() => setInputActive(false)}
+              >
+                {placeHolderArray.map((_, i) => (
+                  <option value={i + 1} key={i}>
+                    {i + 1}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </Tooltip>
         ))}
       {buttons.map((button, i) => (
         // <div css={{ position: 'relative' }}>
         <Tooltip message={buttonMessages[button.type]} key={i}>
           <div
-            css={[
-              buttonStyle,
-              { position: 'relative', fontSize: 14 },
-              i < buttons.length - 1 && { marginRight: 8 },
-            ]}
+            css={[buttonStyle, i < buttons.length - 1 && { marginRight: 8 }]}
             onClick={button.func}
           >
             <FontAwesomeIcon icon={buttonIcons[button.type]} />

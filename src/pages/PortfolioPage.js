@@ -5,8 +5,13 @@ import { jsx, css } from '@emotion/react';
 import { useMemo, useState, useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import produce from 'immer';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useData } from '../context/DataContext';
+import {
+  ContentPageProvider,
+  useContentPage,
+} from '../context/ContentPageContext';
 
 import {
   calcPercentageValue,
@@ -21,18 +26,13 @@ import {
   confirmWrapper,
   createImageComponent,
   selectImage,
-  createTemporaryUniqueId,
 } from '../utils/contentPageUtils';
-import {
-  ContentPageProvider,
-  useContentPage,
-} from '../context/ContentPageContext';
 import { processSaveResData, rmTempFields } from '../utils/processData';
 
 import ContentPageWrapper from '../components/common/ContentPageWrapper';
 import RndElement from '../components/common/RndElement';
-import ImageElement from '../components/portfolio-page/ImageElement';
 import EditImagePopup from '../components/common/EditImagePopup';
+import ImageElement from '../components/portfolio-page/ImageElement';
 
 import { canvasDefault } from '../components/common/styles';
 
@@ -41,14 +41,6 @@ const canvas = css(canvasDefault, {
   left: '50%',
   transform: 'translateX(-50%)',
 });
-
-/* TO DO
-  - 
-*/
-
-/* NOTES
-  - warnings and back don't need to passed down as component
-*/
 
 function Content() {
   const [imageComponentsModified, setImageComponentsModified] = useState([]);
@@ -158,10 +150,7 @@ function Content() {
 
   function handleAddImage(image) {
     const newElement = createImageComponent({
-      id: createTemporaryUniqueId([
-        ...imageComponentsModified,
-        ...imageComponentsRoot,
-      ]),
+      id: uuidv4(),
       orderAndLayerValue: imageComponentsModified.length + 1,
       image,
       device,
@@ -171,14 +160,11 @@ function Content() {
     setUnsavedChange(true);
   }
 
-  const handleDeleteElement = (element) =>
+  const handleDeleteElement = (active) =>
     confirmWrapper('delete', () => {
       setImageComponentsModified(
         produce((draft) => {
-          const draftIndex = draft.findIndex(
-            (component) => component.id === element.id
-          );
-          draft.splice(draftIndex, 1);
+          deleteElement(active, draft);
 
           // process orders and layers
           sortByAscending(draft, 'order');
@@ -202,9 +188,8 @@ function Content() {
     });
 
   function save() {
-    function handleSaveResponses(responses) {
+    const handleSaveResponses = (responses) =>
       processSaveResData(responses, portfolioRoot.setData);
-    }
 
     const processedImageComponents = rmTempFields(imageComponentsModified);
     const pageData = findElement(paramPageId, portfolioRoot.data);
@@ -254,8 +239,6 @@ function Content() {
 
   return (
     <ContentPageWrapper
-      // rootDataFetchStatus={portfolioRoot.fetchStatus}
-      resetRootDataFetch={portfolioRoot.resetFetch}
       controls={{
         addElements: [
           { text: 'image', func: () => setShowEditImagePopup(true) },

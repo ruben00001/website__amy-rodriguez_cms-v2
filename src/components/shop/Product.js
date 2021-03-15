@@ -2,13 +2,10 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import { faEdit } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import ElementControls from '../common/ElementControls';
+import ElementLink from '../common/ElementLink';
 import Guidelines from '../common/Guidelines';
-import Tooltip from '../common/Tooltip';
 
 const container = css({
   position: 'relative',
@@ -45,20 +42,6 @@ const placeholder = (theme) =>
       marginTop: 10,
       fontSize: 14,
     },
-  });
-
-const link = (theme) =>
-  css({
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    zIndex: 100,
-    position: 'absolute',
-    bottom: 0,
-    transition: 'opacity 0.3s ease-in-out',
-    backgroundColor: 'white',
-    color: theme.colors.midgrey,
-    width: '100%',
   });
 
 function Product({
@@ -108,26 +91,17 @@ function Product({
         onMouseEnter={() => setDisableRnd(true)}
         onMouseLeave={() => setDisableRnd(false)}
       />
-      <Link
-        css={[link, (!hovered || rndActive) && { opacity: 0 }]}
-        to={`/shop/${shopifyId}`}
+      <ElementLink
+        show={hovered && !rndActive}
+        to={{ name: title, link: `/shop/${shopifyId}` }}
+        prevent={{
+          condition: !hasSavedMainImage,
+          message:
+            'Product must have an image and be saved before you can edit.',
+        }}
         onMouseEnter={() => setDisableRnd(true)}
         onMouseLeave={() => setDisableRnd(false)}
-        onClick={(e) => {
-          if (!hasSavedMainImage) {
-            e.preventDefault();
-            const message =
-              'Product must have an image and be saved before you can edit.';
-            window.alert(message);
-          }
-        }}
-      >
-        <Tooltip message="Go to product page">
-          <div css={{ position: 'relative' }}>
-            <FontAwesomeIcon icon={faEdit} />
-          </div>
-        </Tooltip>
-      </Link>
+      />
       <Guidelines
         show={showGuidelines}
         parentWidth={canvasWidth}

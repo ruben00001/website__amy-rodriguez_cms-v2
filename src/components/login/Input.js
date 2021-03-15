@@ -3,6 +3,8 @@
 
 import { jsx, css } from '@emotion/react';
 import { useState } from 'react';
+import { faEye, faEyeSlash } from '@fortawesome/free-regular-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import OutsideClickHandler from 'react-outside-click-handler';
 
 import { transitionDurationAndTiming } from './styles';
@@ -83,8 +85,15 @@ const labelFocus = (theme) =>
     color: theme.input.focus,
   });
 
+const eyeIcon = css({
+  position: 'absolute',
+  right: 7,
+  fontSize: 12,
+});
+
 function Input({ type, loginStatus }) {
   const [focus, setFocus] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <OutsideClickHandler onOutsideClick={() => setFocus(false)}>
@@ -97,7 +106,7 @@ function Input({ type, loginStatus }) {
             loginStatus === 'resolved' && resolvedBorder,
             loginStatus === 'rejected' && rejectedBorder,
           ]}
-          type={type}
+          type={type !== 'password' ? type : !showPassword ? type : 'text'}
           name={type}
           id={type}
           onFocus={() => setFocus(true)}
@@ -105,6 +114,13 @@ function Input({ type, loginStatus }) {
         <label css={[label, focus && labelFocus]} htmlFor={type}>
           {type}
         </label>
+        {type === 'password' && (
+          <FontAwesomeIcon
+            css={eyeIcon}
+            onClick={() => setShowPassword((state) => !state)}
+            icon={showPassword ? faEye : faEyeSlash}
+          />
+        )}
       </div>
     </OutsideClickHandler>
   );

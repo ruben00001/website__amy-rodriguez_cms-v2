@@ -161,11 +161,36 @@ const undoButton = css({
   },
 });
 
+const undoDisable = css({
+  cursor: 'auto',
+  border: '1px solid rgba(0,0,0, 0.5)',
+  color: 'rgba(0,0,0, 0.5)',
+
+  '&:hover': {
+    border: '1px solid rgba(0,0,0, 0.5)',
+    color: 'rgba(0,0,0, 0.5)',
+  },
+  '&:active': {
+    border: '1px solid rgba(0,0,0, 0.5)',
+    color: 'rgba(0,0,0, 0.5)',
+  },
+});
+
 const saveButton = (theme) =>
   css(button, {
     backgroundColor: theme.colors.darkblue,
-    // marginLeft: 'auto',
     marginRight: 20,
+
+    '&:hover': { backgroundColor: theme.colors.darkblue_8 },
+  });
+
+const saveDisable = (theme) =>
+  css({
+    cursor: 'auto',
+    backgroundColor: theme.colors.darkblue_5,
+
+    '&:hover': { backgroundColor: theme.colors.darkblue_5 },
+    '&:active': { backgroundColor: theme.colors.darkblue_5 },
   });
 
 const deployButton = (theme) =>
@@ -173,19 +198,22 @@ const deployButton = (theme) =>
     backgroundColor: theme.colors.purple,
     justifySelf: 'end',
     position: 'relative',
+
+    '&:hover': { backgroundColor: theme.colors.purple_8 },
+  });
+
+const deployDisable = (theme) =>
+  css({
+    cursor: 'auto',
+    backgroundColor: theme.colors.purple_5,
+
+    '&:hover': { backgroundColor: theme.colors.purple_5 },
+    '&:active': { backgroundColor: theme.colors.purple_5 },
   });
 
 const deployIcon = css({
   marginLeft: 8,
   fontSize: 13,
-});
-
-const disableButton = css({
-  opacity: 0.5,
-  cursor: 'not-allowed',
-
-  '&:hover': { opacity: 0.5 },
-  '&:active': { opacity: 0.5 },
 });
 
 const showDeployInfoButton = (theme) =>
@@ -213,7 +241,6 @@ const backButton = css(defaultButton, {
   alignItems: 'center',
   color: 'black',
   border: '1px solid black',
-  // backgroundColor: 'white',
   borderRadius: 2,
   fontSize: 11,
   fontWeight: 'bold',
@@ -269,7 +296,7 @@ function ControlPanel({ controls, errors }) {
       <DeployInfo />
       <div css={mainContent}>
         {!showDeployInfo && (
-          <Tooltip message="Show deploy info">
+          <Tooltip message="Show deploy info.">
             <button
               css={showDeployInfoButton}
               onClick={() => setShowDeployInfo(true)}
@@ -336,12 +363,12 @@ function ControlPanel({ controls, errors }) {
           <Tooltip
             message={
               unsavedChange
-                ? 'Undo changes since last save'
-                : 'No changes to undo'
+                ? 'Undo changes since last save.'
+                : 'No changes to undo.'
             }
           >
             <div
-              css={[undoButton, !unsavedChange && disableButton]}
+              css={[undoButton, !unsavedChange && undoDisable]}
               onClick={() => {
                 if (unsavedChange) controls.undoChanges();
               }}
@@ -360,7 +387,7 @@ function ControlPanel({ controls, errors }) {
           <div
             css={[
               saveButton,
-              (!unsavedChange || isSaveBlockingError) && disableButton,
+              (!unsavedChange || isSaveBlockingError) && saveDisable,
             ]}
             onClick={() => {
               if (unsavedChange && !isSaveBlockingError) controls.save();
@@ -372,9 +399,9 @@ function ControlPanel({ controls, errors }) {
         <Tooltip
           message={
             undeployedSave ? (
-              <em>Do this at the end of each session</em>
+              <em>Do this at the end of each session.</em>
             ) : (
-              'Nothing to deploy'
+              'Nothing to deploy.'
             )
           }
           translate={undeployedSave ? -40 : 0}
@@ -386,9 +413,11 @@ function ControlPanel({ controls, errors }) {
               (undeployedSave === false ||
                 (!deployData && fetchDeployStatus !== 'rejected') ||
                 deployStatus !== 'ready') &&
-                disableButton,
+                deployDisable,
             ]}
-            onClick={createSiteBuild}
+            onClick={() => {
+              if (undeployedSave) createSiteBuild();
+            }}
           >
             {!deployData && fetchDeployStatus !== 'rejected' ? (
               <p>Updating...</p>

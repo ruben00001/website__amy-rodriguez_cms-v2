@@ -3,18 +3,8 @@
 
 import { jsx, css } from '@emotion/core';
 import React, { Children, cloneElement, useMemo, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
 import { useData } from '../../context/DataContext';
-
-const placeholderContainer = css({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  width: '100%',
-  height: '100%',
-  zIndex: 500,
-});
 
 const tooltipContainer = css({
   fontFamily: "'Roboto', sans-serif",
@@ -57,37 +47,35 @@ function Tooltip({ children, message, disable, translate = 0 }) {
 
   return (
     <React.Fragment>
-      {Children.map(children, (child) => {
+      {Children.map(children, (child, i) => {
         if (children.length > 1) {
           throw new Error(`Tooltip is currently set up to work with 1 child.`);
         }
-        return cloneElement(child, child.props, [
-          child.props.children,
-          <div
-            css={[
-              placeholderContainer,
-              (disable || !tooltips) && {
-                display: 'none',
-              },
-            ]}
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            key={uuidv4()}
-          >
+        return cloneElement(
+          child,
+          {
+            ...child.props,
+            css: [child.props.css, { zIndex: 1000 }],
+            onMouseEnter: () => setShowTooltip(true),
+            onMouseLeave: () => setShowTooltip(false),
+          },
+          [
+            child.props.children,
             <div
               css={[
                 tooltipContainer,
                 { transform: `translateX(calc(-50% + ${translate}px))` },
                 { '&::after': { transform: `translateX(${-translate}px)` } },
-                !showTooltip && {
+                (disable || !tooltips || !showTooltip) && {
                   display: 'none',
                 },
               ]}
+              key={i}
             >
               {message}
-            </div>
-          </div>,
-        ]);
+            </div>,
+          ]
+        );
       })}
     </React.Fragment>
   );
