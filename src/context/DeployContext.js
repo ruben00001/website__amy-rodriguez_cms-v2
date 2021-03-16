@@ -32,10 +32,11 @@ const DeployProvider = ({ children }) => {
     () => new NetlifyAPI('W43FJpBK-fIAz1BxbBZB3-zmn6vQn4-3PjEHIXkT-aM'),
     []
   );
-  const site_id =
-    process.env.NODE_ENV === 'development'
-      ? 'cf3b4320-664f-45d5-ba30-fd1e17803b87'
-      : 'd894703e-7258-4219-9edd-4fb05e77d508';
+  const site_id = 'd894703e-7258-4219-9edd-4fb05e77d508';
+  // const site_id =
+  //   process.env.NODE_ENV === 'development'
+  //     ? 'cf3b4320-664f-45d5-ba30-fd1e17803b87'
+  //     : 'd894703e-7258-4219-9edd-4fb05e77d508';
 
   useLayoutEffect(() => {
     if (!latestSiteBuildOnStartupAttempted && netlifyClient) {
