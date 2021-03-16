@@ -46,7 +46,6 @@ function useAsync() {
         }, 700);
       })
       .catch((error) => {
-        console.log('🚀 ~ file: useAsync.js ~ line 49 ~ run ~ error', error);
         if (processError) processError();
         dispatch({ type: 'rejected', error });
         setTimeout(() => {

@@ -2,7 +2,8 @@
 /** @jsx jsx */
 
 import { jsx, css } from '@emotion/react';
-import React, { useMemo, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
+import { useResizeDetector } from 'react-resize-detector';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
@@ -270,20 +271,19 @@ function ControlPanel({ controls, errors }) {
     undeployedSave,
     showDeployInfo,
     setShowDeployInfo,
-    deployData,
-    createBuildStatus,
+    listBuildsStatus,
     fetchDeployStatus,
+    deployProcessPending,
     createSiteBuild,
   } = useDeploy();
-  const deployStatus = deployData?.state;
 
-  const ref = (node) => {
-    if (!node) return;
+  const { height, ref: containerRef } = useResizeDetector();
 
-    const { height } = node.getBoundingClientRect();
+  useLayoutEffect(() => {
+    if (height) setControlPanelHeight(height);
+  }, [height, setControlPanelHeight]);
 
-    setControlPanelHeight(height);
-  };
+  // DERIVED DATA
 
   const isSaveBlockingError = useMemo(() => {
     if (!errors) return false;
@@ -291,8 +291,19 @@ function ControlPanel({ controls, errors }) {
     return true;
   }, [errors]);
 
+  const derivedDeployStatus = useMemo(() => {
+    if (
+      listBuildsStatus === 'idle' ||
+      listBuildsStatus === 'pending' ||
+      fetchDeployStatus === 'pending'
+    )
+      return 'updating';
+    if (deployProcessPending) return 'deploying';
+    return 'idle';
+  }, [deployProcessPending, fetchDeployStatus, listBuildsStatus]);
+
   return (
-    <div css={[container, saveIsActive && fetchDisable]} ref={ref}>
+    <div css={[container, saveIsActive && fetchDisable]} ref={containerRef}>
       <DeployInfo />
       <div css={mainContent}>
         {!showDeployInfo && (
@@ -405,24 +416,22 @@ function ControlPanel({ controls, errors }) {
             )
           }
           translate={undeployedSave ? -40 : 0}
-          disable={deployData?.state !== 'ready'}
+          disable={derivedDeployStatus !== 'idle'}
         >
           <div
             css={[
               deployButton,
-              (undeployedSave === false ||
-                (!deployData && fetchDeployStatus !== 'rejected') ||
-                deployStatus !== 'ready') &&
+              (undeployedSave === false || derivedDeployStatus !== 'idle') &&
                 deployDisable,
             ]}
             onClick={() => {
-              if (undeployedSave) createSiteBuild();
+              if (undeployedSave && derivedDeployStatus === 'idle')
+                createSiteBuild();
             }}
           >
-            {!deployData && fetchDeployStatus !== 'rejected' ? (
+            {derivedDeployStatus === 'updating' ? (
               <p>Updating...</p>
-            ) : createBuildStatus === 'pending' ||
-              (deployData && deployStatus !== 'ready') ? (
+            ) : derivedDeployStatus === 'deploying' ? (
               <p>Deploying...</p>
             ) : (
               <React.Fragment>

@@ -80,11 +80,14 @@ function DeployInfo() {
     showDeployInfo,
     setShowDeployInfo,
     deployData,
+    fetchDeploy,
+    // deployProcessPending,
+    lastBuildData,
+    // listBuildsStatus,
+    deployStatus,
     createBuildStatus,
     fetchDeployStatus,
-    fetchDeploy,
   } = useDeploy();
-  const deployStatus = deployData?.state;
 
   useLayoutEffect(() => {
     if (createBuildStatus === 'pending') {
@@ -163,8 +166,11 @@ function DeployInfo() {
                 </p>
               ) : (
                 <p>
-                  Deploy FAILED. Please try again. If the problem persists,
-                  please contact Ruben.
+                  Last deploy, created at{' '}
+                  {convertToLocalTimeString(lastBuildData.created_at)} on{' '}
+                  {conventToLocalDateString(lastBuildData.created_at)}
+                  <b>, failed</b>. Please try again. If the problem persists,
+                  contact Ruben.
                 </p>
               )}
             </React.Fragment>
