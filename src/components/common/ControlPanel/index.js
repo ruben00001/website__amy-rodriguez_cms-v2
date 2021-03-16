@@ -3,7 +3,7 @@
 
 import { jsx, css } from '@emotion/react';
 import React, { useLayoutEffect, useMemo, useState } from 'react';
-import { useResizeDetector } from 'react-resize-detector';
+import ReactResizeDetector, { useResizeDetector } from 'react-resize-detector';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
@@ -280,7 +280,7 @@ function ControlPanel({ controls, errors }) {
   const { height, ref: containerRef } = useResizeDetector();
 
   useLayoutEffect(() => {
-    if (height) setControlPanelHeight(height);
+    if (height) setControlPanelHeight(height + 30); // padding = 30
   }, [height, setControlPanelHeight]);
 
   // DERIVED DATA
