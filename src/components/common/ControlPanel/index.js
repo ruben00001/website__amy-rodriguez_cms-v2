@@ -3,7 +3,7 @@
 
 import { jsx, css } from '@emotion/react';
 import React, { useLayoutEffect, useMemo, useState } from 'react';
-import ReactResizeDetector, { useResizeDetector } from 'react-resize-detector';
+import { useResizeDetector } from 'react-resize-detector';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
