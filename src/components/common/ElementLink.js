@@ -15,7 +15,7 @@ const container = (theme) =>
     position: 'absolute',
     bottom: 0,
     right: 0,
-    transform: 'translateY(100%)',
+    transform: 'translateX(100%)',
     display: 'flex',
     alignItems: 'center',
     background: theme.colors.midgrey_7,
@@ -27,7 +27,7 @@ const container = (theme) =>
 const linkStyle = (theme) =>
   css(buttonDefault, {
     position: 'relative',
-    fontSize: 14,
+    fontSize: 12,
     color: theme.colors.purple,
   });
 

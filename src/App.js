@@ -92,18 +92,22 @@ function AppRoutes() {
         <Route exact path="/">
           <Login />
         </Route>
-        <AuthenticatedRoute path="/landing">
-          <Landing />
-        </AuthenticatedRoute>
-        <AuthenticatedRoute path="/portfolio">
-          <PortfolioRoutes />
-        </AuthenticatedRoute>
-        <AuthenticatedRoute path="/shop">
-          <ShopRoutes />
-        </AuthenticatedRoute>
-        <AuthenticatedRoute path="/press">
-          <Press />
-        </AuthenticatedRoute>
+        <DataProvider>
+          <DeployProvider>
+            <AuthenticatedRoute path="/landing">
+              <Landing />
+            </AuthenticatedRoute>
+            <AuthenticatedRoute path="/portfolio">
+              <PortfolioRoutes />
+            </AuthenticatedRoute>
+            <AuthenticatedRoute path="/shop">
+              <ShopRoutes />
+            </AuthenticatedRoute>
+            <AuthenticatedRoute path="/press">
+              <Press />
+            </AuthenticatedRoute>
+          </DeployProvider>
+        </DataProvider>
         <Route path="*">
           <FourOFour />
         </Route>
@@ -117,14 +121,11 @@ function App() {
     <Router>
       <AuthProvider>
         <FetchProvider>
-          <DataProvider>
-            <ThemeProvider theme={globalCSSTheme}>
-              <GlobalCSS />
-              <DeployProvider>
-                <AppRoutes />
-              </DeployProvider>
-            </ThemeProvider>
-          </DataProvider>
+          <ThemeProvider theme={globalCSSTheme}>
+            <GlobalCSS />
+
+            <AppRoutes />
+          </ThemeProvider>
         </FetchProvider>
       </AuthProvider>
     </Router>

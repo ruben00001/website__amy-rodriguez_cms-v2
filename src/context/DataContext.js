@@ -276,71 +276,74 @@ function DataProvider({ children }) {
     }
   }, [portfolioRoot, pressRoot, strapiProductsRoot]);
 
-  // useEffect(() => {
-  //   // CLEAN UP DATABASE
-  //   if (
-  //     cleanDbToggle &&
-  //     imagesRoot &&
-  //     portfolioRoot &&
-  //     shopifyProductsData &&
-  //     strapiProductsRoot &&
-  //     pressRoot &&
-  //     uploadsRes
-  //   ) {
-  //     setCleanDbToggle(false);
+  useEffect(() => {
+    // CLEAN UP DATABASE
+    if (
+      cleanDbToggle &&
+      imagesRoot &&
+      portfolioRoot &&
+      shopifyProductsData &&
+      strapiProductsRoot &&
+      pressRoot &&
+      uploadsRes
+    ) {
+      setCleanDbToggle(false);
 
-  //     const unusedPortfPages = filterArr1WithArr2(
-  //       portfolioRes.data,
-  //       portfolioRoot,
-  //       'excludes'
-  //     );
-  //     const unusedStrapiProducts = filterArr1WithArr2(
-  //       strapiProductsRes.data,
-  //       shopifyProductsData,
-  //       'excludes',
-  //       'shopifyId'
-  //     );
-  //     const unusedImages = filterArr1WithArr2(
-  //       imagesRes.data,
-  //       imagesRoot,
-  //       'excludes'
-  //     );
-  //     const unusedUploads = filterArr1WithArr2(
-  //       uploadsRes.data,
-  //       imagesRoot.map((image) => image.image)
-  //     );
+      const unusedPortfPages = filterArr1WithArr2(
+        portfolioRes.data,
+        portfolioRoot,
+        'excludes'
+      );
 
-  //     axios.all(
-  //       [
-  //         unusedPortfPages.map((page) =>
-  //           authFetch.delete(`${strapiEndpoints.portfolio}/${page.id}`)
-  //         ),
-  //         unusedStrapiProducts.map((product) =>
-  //           authFetch.delete(`${strapiEndpoints.products}/${product.id}`)
-  //         ),
-  //         unusedImages.map((image) =>
-  //           authFetch.delete(`${strapiEndpoints.images}/${image.id}`)
-  //         ),
-  //         unusedUploads.map((upload) =>
-  //           authFetch.delete(`${strapiEndpoints.uploads}/${upload.id}`)
-  //         ),
-  //       ].flat()
-  //     );
-  //   }
-  // }, [
-  //   authFetch,
-  //   cleanDbToggle,
-  //   imagesRes,
-  //   imagesRoot,
-  //   portfolioRes,
-  //   portfolioRoot,
-  //   pressRoot,
-  //   shopifyProductsData,
-  //   strapiEndpoints,
-  //   strapiProductsRes,
-  //   strapiProductsRoot,
-  //   uploadsRes,
-  // ]);
+      const unusedStrapiProducts = filterArr1WithArr2(
+        strapiProductsRes.data,
+        shopifyProductsData,
+        'excludes',
+        'shopifyId'
+      );
+
+      const unusedImages = filterArr1WithArr2(
+        imagesRes.data,
+        imagesRoot,
+        'excludes'
+      );
+
+      const unusedUploads = filterArr1WithArr2(
+        uploadsRes.data,
+        imagesRoot.map((image) => image.image)
+      );
+
+      axios.all(
+        [
+          unusedPortfPages.map((page) =>
+            authFetch.delete(`${strapiEndpoints.portfolio}/${page.id}`)
+          ),
+          unusedStrapiProducts.map((product) =>
+            authFetch.delete(`${strapiEndpoints.products}/${product.id}`)
+          ),
+          unusedImages.map((image) =>
+            authFetch.delete(`${strapiEndpoints.images}/${image.id}`)
+          ),
+          unusedUploads.map((upload) =>
+            authFetch.delete(`${strapiEndpoints.uploads}/${upload.id}`)
+          ),
+        ].flat()
+      );
+    }
+  }, [
+    authFetch,
+    cleanDbToggle,
+    imagesRes,
+    imagesRoot,
+    portfolioRes,
+    portfolioRoot,
+    pressRoot,
+    shopifyProductsData,
+    strapiEndpoints,
+    strapiProductsRes,
+    strapiProductsRoot,
+    uploadsRes,
+  ]);
 
   const value = {
     portfolioRoot: {

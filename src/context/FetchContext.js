@@ -36,7 +36,13 @@ const FetchProvider = ({ children }) => {
   );
   authFetch.interceptors.request.use(
     (config) => {
-      config.headers.Authorization = `Bearer ${token}`;
+      // config.headers.Authorization = `Bearer ${token}`;
+      config.headers = Object.assign(
+        {
+          Authorization: `Bearer ${token}`,
+        },
+        config.headers
+      );
 
       if (config.method === 'get') {
         config.params = { ...config?.params, _limit: '1000000' };
@@ -63,7 +69,14 @@ const FetchProvider = ({ children }) => {
   );
   authFormFetch.interceptors.request.use(
     (config) => {
-      config.headers.Authorization = `Bearer ${token}`;
+      // config.headers.Authorization = `Bearer ${token}`;
+      config.headers = Object.assign(
+        {
+          Authorization: `Bearer ${token}`,
+        },
+        config.headers
+      );
+
       return config;
     },
     (error) => {
