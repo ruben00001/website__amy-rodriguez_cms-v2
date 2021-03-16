@@ -281,6 +281,8 @@ function DataProvider({ children }) {
     if (
       cleanDbToggle &&
       imagesRoot &&
+      imagesRes &&
+      imagesRes.data &&
       portfolioRoot &&
       shopifyProductsData &&
       strapiProductsRoot &&

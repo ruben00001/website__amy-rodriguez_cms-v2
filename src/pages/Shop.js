@@ -3,6 +3,7 @@
 
 import { jsx, css } from '@emotion/react';
 import { useLayoutEffect, useMemo, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useData } from '../context/DataContext';
 import {
@@ -17,7 +18,6 @@ import {
   selectImage,
   deleteElement,
   createImageComponent,
-  createTemporaryUniqueId,
 } from '../utils/contentPageUtils';
 import {
   calcPercentageValue,
@@ -301,7 +301,7 @@ function Content() {
             (imageComponent) => (imageComponent.shopHomeStatus = 'none')
           );
           const newImageComponent = createImageComponent({
-            id: createTemporaryUniqueId(imageComponents), // this won't be unique across other products. I think it's fine though.
+            id: uuidv4(),
             orderAndLayerValue: imageComponents.length + 1,
             image: data,
             device,
@@ -403,7 +403,7 @@ function Content() {
         />
       }
     >
-      {canvasHeight && (
+      {canvasWidth && bodyWidth && canvasHeight && (
         <RndElement
           positionType="static"
           width={(canvasWidth / bodyWidth) * 100}
@@ -419,12 +419,13 @@ function Content() {
           cloneProps={false}
         >
           <div css={canvas}>
-            {productsModified &&
+            {device &&
+              productsModified &&
               productsModified.map((product) => (
                 <RndElement
                   position={handleSelectPosition(product)}
                   width={
-                    selectComponent(product.widths, device, 'apsectRatio').value
+                    selectComponent(product.widths, device, 'aspectRatio').value
                   }
                   updatePosition={(newValue) =>
                     handleUpdatePositionOrWidth(product, 'positions', newValue)

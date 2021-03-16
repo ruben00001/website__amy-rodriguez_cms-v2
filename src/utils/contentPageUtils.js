@@ -60,17 +60,6 @@ function selectComponent(components, device, mediaQueryType) {
   }
 }
 
-function createTemporaryUniqueId(components) {
-  const existingIds = components.map((component) => component.id);
-  const numberComponents = components.length;
-  const possibleNewIds = Array.from(
-    Array(numberComponents + 1),
-    (_, i) => i + 1
-  ).filter((id) => !existingIds.includes(id));
-
-  return possibleNewIds[0];
-}
-
 function createImageComponent({ id, orderAndLayerValue, image, device, page }) {
   const deviceAspectRatio = device ? device.aspectRatio : 1.8;
   const landscapePosition = { aspectRatio: 1.8, x: 0, y: -10 };
@@ -140,7 +129,6 @@ export {
   addElement,
   confirmWrapper,
   createImageComponent,
-  createTemporaryUniqueId,
   deleteElement,
   interpretMultipleFetchStatuses,
   selectComponent,

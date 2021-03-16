@@ -11,8 +11,7 @@ function usePageDimensions({ controlPanelHeight, device }) {
 
   useLayoutEffect(() => {
     if (controlPanelHeight) {
-      const singleScreenBodyHeight =
-        document.body.getBoundingClientRect().height - controlPanelHeight;
+      const singleScreenBodyHeight = window.innerHeight - controlPanelHeight;
 
       setDimensions((dimensions) => {
         return { ...dimensions, singleScreenBodyHeight };

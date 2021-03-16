@@ -1,4 +1,4 @@
-import { Children, cloneElement, useState } from 'react';
+import { Children, cloneElement, useEffect, useState } from 'react';
 import { Rnd } from 'react-rnd';
 
 function RndElement({

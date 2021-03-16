@@ -134,7 +134,7 @@ const ContentPageWrapper = ({
               marginTop: controlPanelHeight,
               minHeight: singleScreenBodyHeight,
             },
-            (page === 'shop' || page === 'press') && { paddingBottom: 600 },
+            (page === 'shop' || page === 'press') && { paddingBottom: 400 },
             saveIsActive && fetchDisable,
           ]}
         >

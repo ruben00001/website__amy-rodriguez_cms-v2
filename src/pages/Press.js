@@ -4,6 +4,7 @@
 import { jsx, css } from '@emotion/react';
 import { useLayoutEffect, useMemo, useReducer, useState } from 'react';
 import produce from 'immer';
+import { v4 as uuidv4 } from 'uuid';
 
 import { useData } from '../context/DataContext';
 import {
@@ -21,7 +22,6 @@ import {
   interpretMultipleFetchStatuses,
   confirmWrapper,
   selectComponent,
-  createTemporaryUniqueId,
   addElement,
   deleteElement,
 } from '../utils/contentPageUtils';
@@ -184,7 +184,7 @@ function Content() {
 
   function handleAddElement() {
     const newElement = {
-      id: createTemporaryUniqueId([...pressRoot.data, ...pressModified]),
+      id: uuidv4(),
       title: null,
       linkUrl: null,
       image: null,
@@ -310,7 +310,7 @@ function Content() {
             {
               width: canvasWidth,
               minHeight: singleScreenCanvasHeight,
-              top: (singleScreenBodyHeight - singleScreenCanvasHeight) / 2,
+              // top: (singleScreenBodyHeight - singleScreenCanvasHeight) / 2,
             },
           ]}
         >
