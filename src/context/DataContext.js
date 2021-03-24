@@ -51,6 +51,13 @@ function DataProvider({ children }) {
   } = useAsync();
 
   const {
+    res: shopifyCollectionsData,
+    status: shopifyCollectionsFetchStatus,
+    run: runShopifyCollectionsFetch,
+    reset: resetShopifyCollectionsFetch,
+  } = useAsync();
+
+  const {
     status: shopHeightsFetchStatus,
     run: runShopHeightsFetch,
     reset: resetShopHeightsFetch,
@@ -173,6 +180,19 @@ function DataProvider({ children }) {
       runShopifyProductsFetch(shopifyClient.product.fetchAll(250));
     }
   }, [runShopifyProductsFetch, shopifyProductsFetchStatus]);
+
+  useEffect(() => {
+    if (shopifyCollectionsFetchStatus === 'idle') {
+      const shopifyClient = Client.buildClient({
+        storefrontAccessToken: 'aec2e7a9ff50e738535be4a359037f1f',
+        domain: 'amy-jewellery-x.myshopify.com',
+      });
+
+      runShopifyCollectionsFetch(
+        shopifyClient.collection.fetchAllWithProducts(250)
+      );
+    }
+  }, [runShopifyCollectionsFetch, shopifyCollectionsFetchStatus]);
 
   useEffect(() => {
     if (shopHeightsFetchStatus === 'idle') {
@@ -364,6 +384,11 @@ function DataProvider({ children }) {
       data: shopifyProductsData,
       fetchStatus: shopifyProductsFetchStatus,
       resetFetch: resetShopifyProductsFetch,
+    },
+    shopifyCollections: {
+      data: shopifyCollectionsData,
+      fetchStatus: shopifyCollectionsFetchStatus,
+      resetFetch: resetShopifyCollectionsFetch,
     },
     shopHeightsRoot: {
       data: shopHeightsRoot,

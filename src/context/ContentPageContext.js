@@ -1,20 +1,20 @@
+import React, { createContext, useState, useContext } from 'react';
 import axios from 'axios';
-import React, { createContext, useState } from 'react';
-import { useContext } from 'react';
+
 import useAsync from '../hooks/useAsync';
-import useDevice from '../hooks/useDevice';
 import usePageDimensions from '../hooks/usePageDimensions';
 import { useDeploy } from './DeployContext';
 import { useFetch } from './FetchContext';
+
+import { devices } from '../constants';
 
 const ContentPageContext = createContext();
 const { Provider } = ContentPageContext;
 
 const ContentPageProvider = ({ children, page }) => {
+  const [device, setDevice] = useState(devices[0]);
   const [unsavedChange, setUnsavedChange] = useState(false);
   const [controlPanelHeight, setControlPanelHeight] = useState(null);
-
-  const { device, setDevice } = useDevice();
 
   const {
     bodyWidth,

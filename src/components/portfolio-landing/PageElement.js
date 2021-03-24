@@ -18,6 +18,15 @@ const container = css({
   marginTop: 30,
 });
 
+const imagesContainer = css({
+  position: 'absolute',
+  left: 0,
+  top: 0,
+  width: '27vw',
+  height: '18vw',
+  overflow: 'hidden',
+});
+
 export default function PageElement({
   hovered,
   isDragging,
@@ -37,21 +46,23 @@ export default function PageElement({
         },
       ]}
     >
-      {imageComponents.map((imageComponent) => (
-        <img
-          css={[
-            {
-              position: 'absolute',
-              left: `${imageComponent.positions[0].x}%`,
-              top: `${imageComponent.positions[0].y}%`,
-              width: `${imageComponent.widths[0].value}%`,
-            },
-          ]}
-          src={selectImage(imageComponent.image.image, 'small')}
-          alt=""
-          key={imageComponent.id}
-        />
-      ))}
+      <div css={imagesContainer}>
+        {imageComponents.map((imageComponent) => (
+          <img
+            css={[
+              {
+                position: 'absolute',
+                left: `${imageComponent.positions[0].x}%`,
+                top: `${imageComponent.positions[0].y}%`,
+                width: `${imageComponent.widths[0].value}%`,
+              },
+            ]}
+            src={selectImage(imageComponent.image.image, 'small')}
+            alt=""
+            key={imageComponent.id}
+          />
+        ))}
+      </div>
       <ElementControls
         show={hovered && !isDragging}
         buttons={[{ type: 'delete', func: deletePage }]}

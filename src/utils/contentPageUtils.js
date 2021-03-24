@@ -1,29 +1,11 @@
 import produce from 'immer';
 import { sortByAscending } from '.';
 
-const interpretMultipleFetchStatuses = (
-  status1,
-  status2,
-  status3 = 'complete'
-) => {
-  if (
-    status1 === 'rejected' ||
-    status2 === 'rejected' ||
-    status3 === 'rejected'
-  ) {
-    return 'rejected';
-  }
-  if (status1 === 'pending' || status2 === 'pending' || status3 === 'pending') {
-    return 'pending';
-  }
-  if (
-    status1 === 'resolved' ||
-    status2 === 'resolved' ||
-    status3 === 'resolved'
-  ) {
-    return 'resolved';
-  }
-  return status1;
+const interpretMultipleFetchStatuses = (statuses) => {
+  if (statuses.includes('rejected')) return 'rejected';
+  if (statuses.includes('pending')) return 'pending';
+  if (statuses.includes('resolved')) return 'resolved';
+  return statuses[0];
 };
 
 const confirmWrapper = (type, payload) => {

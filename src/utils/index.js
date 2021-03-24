@@ -73,8 +73,6 @@ function createPlaceholderArray(length) {
   return array;
 }
 
-// ---------------------
-
 export {
   filterNew,
   filterUpdated,

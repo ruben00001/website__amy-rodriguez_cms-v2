@@ -37,10 +37,8 @@ import { canvasDefault } from '../components/common/styles';
 import PageFold from '../components/common/PageFold';
 
 const canvas = css(canvasDefault, {
-  // margin: '200px auto  0px',
   paddingTop: 1, // strange behaviour. When don't have padding here, margins in pressElementsContainer have no affect.
   paddingBottom: 1,
-  marginTop: 200,
   marginLeft: '50%',
   transform: 'translateX(-50%)',
 });
@@ -64,10 +62,6 @@ const placeHolderElementStyle = css({
     paddingTop: '100%',
   },
 });
-
-/* NOTES
-  - pressperrow should be by device width not aspect ratio!! change Strapi schema
-*/
 
 const editedElementIdleState = { type: null, element: null };
 
@@ -123,10 +117,10 @@ function Content() {
 
   const rootDataFetchStatus = useMemo(
     () =>
-      interpretMultipleFetchStatuses(
+      interpretMultipleFetchStatuses([
         pressRoot.fetchStatus,
-        pressPerRowRoot.fetchStatus
-      ),
+        pressPerRowRoot.fetchStatus,
+      ]),
     [pressRoot.fetchStatus, pressPerRowRoot.fetchStatus]
   );
 
@@ -310,7 +304,8 @@ function Content() {
             {
               width: canvasWidth,
               minHeight: singleScreenCanvasHeight,
-              // top: (singleScreenBodyHeight - singleScreenCanvasHeight) / 2,
+              marginTop:
+                (singleScreenBodyHeight - singleScreenCanvasHeight) / 2,
             },
           ]}
         >

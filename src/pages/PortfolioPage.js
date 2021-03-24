@@ -246,7 +246,7 @@ function Content() {
         device: true,
         undoChanges,
         save,
-        back: '/portfolio',
+        back: { to: '/portfolio', name: 'portfolio landing' },
       }}
       errors={errors}
       editImagePopup={

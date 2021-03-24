@@ -1,7 +1,7 @@
 /** @jsxRuntime classic */
 /** @jsx jsx */
 
-import { jsx, css } from '@emotion/core';
+import { jsx, css } from '@emotion/react';
 import React, { Children, cloneElement, useMemo, useState } from 'react';
 
 import { useData } from '../../context/DataContext';
@@ -55,7 +55,7 @@ function Tooltip({ children, message, disable, translate = 0 }) {
           child,
           {
             ...child.props,
-            css: [child.props.css, { zIndex: 1000 }],
+            css: [child.props.css, showTooltip && { zIndex: 1000 }],
             onMouseEnter: () => setShowTooltip(true),
             onMouseLeave: () => setShowTooltip(false),
           },

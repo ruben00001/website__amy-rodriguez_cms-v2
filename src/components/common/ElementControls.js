@@ -119,19 +119,19 @@ function ElementControls({
     >
       {checkboxes &&
         checkboxes.map((checkbox, i) => (
-          // <Tooltip message={buttonMessages[checkbox.type]} key={i}>
-          <div css={inputContainer} key={i}>
-            <FontAwesomeIcon icon={buttonIcons[checkbox.type]} />
-            <input
-              css={[inputStyle, { cursor: 'pointer' }]}
-              type="checkbox"
-              checked={checkbox.value === 'main' ? true : false}
-              onChange={(e) =>
-                !e.target.checked ? e.preventDefault() : checkbox.func()
-              }
-            />
-          </div>
-          // </Tooltip>
+          <Tooltip message={buttonMessages[checkbox.type]} key={i}>
+            <div css={inputContainer} key={i}>
+              <FontAwesomeIcon icon={buttonIcons[checkbox.type]} />
+              <input
+                css={[inputStyle, { cursor: 'pointer' }]}
+                type="checkbox"
+                checked={checkbox.value === 'main' ? true : false}
+                onChange={(e) =>
+                  !e.target.checked ? e.preventDefault() : checkbox.func()
+                }
+              />
+            </div>
+          </Tooltip>
         ))}
       {selects &&
         numberComponents > 1 &&

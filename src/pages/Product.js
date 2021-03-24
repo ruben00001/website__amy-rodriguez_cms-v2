@@ -423,7 +423,7 @@ function Content() {
         device: true,
         undoChanges,
         save,
-        back: '/shop',
+        back: { to: '/shop', name: 'shop' },
       }}
       errors={errors}
       editImagePopup={

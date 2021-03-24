@@ -15,7 +15,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import { useDeploy } from '../../../context/DeployContext';
-import { devices } from '../../../constants';
 import NavigationMenu from '../NavigationMenu';
 import { button as defaultButton, fetchDisable } from '../styles';
 import Tooltip from '../Tooltip';
@@ -23,6 +22,8 @@ import DeployInfo from './DeployInfo';
 import { useContentPage } from '../../../context/ContentPageContext';
 import { Link } from 'react-router-dom';
 import WarningMessages from '../WarningMessages';
+import DeviceSelect from './DeviceSelect';
+import ProductCollectionSelect from './ProductCollectionSelect';
 
 const container = (theme) =>
   css({
@@ -102,38 +103,6 @@ const numPerRowContainer = css({
     border: '1px solid black',
     borderRadius: 2,
     paddingLeft: 10,
-  },
-});
-
-const deviceSelectContainer = css({
-  position: 'relative',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  marginLeft: 40,
-  fontVariant: 'small-caps',
-
-  label: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontSize: 14,
-    marginBottom: 2,
-    width: 110,
-    height: 27,
-    backgroundColor: 'white',
-    border: '1px solid black',
-    borderRadius: 2,
-    pointerEvents: 'none',
-  },
-
-  select: {
-    fontSize: 12,
-    width: 110,
-    height: 27,
   },
 });
 
@@ -257,12 +226,9 @@ const backIcon = css({
 
 function ControlPanel({ controls, errors }) {
   const [showNavigationMenu, setShowNavigationMenu] = useState(false);
-  const [selectOptionsShown, setSelectOptionsShown] = useState(false);
 
   const {
-    page,
     unsavedChange,
-    setDevice,
     saveIsActive,
     setControlPanelHeight,
   } = useContentPage();
@@ -345,30 +311,9 @@ function ControlPanel({ controls, errors }) {
             />
           </div>
         )}
-        {controls.device && (
-          <div css={deviceSelectContainer}>
-            {!selectOptionsShown && (
-              <label htmlFor="deviceSelect">device</label>
-            )}
-            <select
-              id="deviceSelect"
-              onClick={() => setSelectOptionsShown(true)}
-              onChange={(e) => setDevice(Number(e.target.value))}
-            >
-              {devices
-                .sort((a, b) =>
-                  page === 'press'
-                    ? b.width - a.width
-                    : b.aspectRatio - a.aspectRatio
-                )
-                .map((device, i) => (
-                  <option value={i} key={device.name}>
-                    {device.name} :{' '}
-                    {page === 'press' ? device.width : device.aspectRatio}
-                  </option>
-                ))}
-            </select>
-          </div>
+        {controls.device && <DeviceSelect />}
+        {controls.productCollection && (
+          <ProductCollectionSelect update={controls.productCollection.update} />
         )}
         <div css={undoContainer}>
           <Tooltip
@@ -443,10 +388,12 @@ function ControlPanel({ controls, errors }) {
         </Tooltip>
       </div>
       {controls.back && (
-        <Link css={backButton} to={controls.back}>
-          <FontAwesomeIcon css={backIcon} icon={faArrowLeft} />
-          <p>BACK</p>
-        </Link>
+        <Tooltip message={`To ${controls.back.name}.`} translate="20">
+          <Link css={backButton} to={controls.back.to}>
+            <FontAwesomeIcon css={backIcon} icon={faArrowLeft} />
+            <p>BACK</p>
+          </Link>
+        </Tooltip>
       )}
       <WarningMessages errors={errors} />
     </div>
