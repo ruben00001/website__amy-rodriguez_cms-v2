@@ -12,7 +12,6 @@ import { useContentPage } from '../../context/ContentPageContext';
 import { scrollToBottom, scrollToTop } from '../../utils';
 
 import ControlPanel from './ControlPanel';
-import LoadingBar from './LoadingBar';
 import LoadingOverlay from './LoadingOverlay';
 import Settings from './Settings';
 import RouterPrompt from './RouterPrompt';
@@ -73,7 +72,6 @@ const ContentPageWrapper = ({
     page,
     unsavedChange,
     saveIsActive,
-    saveStatus,
     singleScreenBodyHeight,
     controlPanelHeight,
   } = useContentPage();
@@ -109,7 +107,6 @@ const ContentPageWrapper = ({
           fetchData={resetRootDataFetch}
         />
       )}
-      <LoadingBar status={saveStatus} showStatusText={true} />
       <ControlPanel controls={controls} errors={errors} />
       {showScrollButtons && (
         <React.Fragment>

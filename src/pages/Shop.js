@@ -162,10 +162,12 @@ function Content() {
           (collectionProduct) => collectionProduct.id === shopifyProduct.id
         );
         if (productExistsInCollection) {
-          const collectionDataAlreadyExists = strapiProduct.collections.find(
-            (existingCollection) =>
-              existingCollection.collectionId === collection.id
-          );
+          const collectionDataAlreadyExists =
+            strapiProduct.collections &&
+            strapiProduct.collections.find(
+              (existingCollection) =>
+                existingCollection.collectionId === collection.id
+            );
           if (!collectionDataAlreadyExists) {
             const dataObject = {
               collectionId: collection.id,

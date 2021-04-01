@@ -24,6 +24,7 @@ import { Link } from 'react-router-dom';
 import WarningMessages from '../WarningMessages';
 import DeviceSelect from './DeviceSelect';
 import ProductCollectionSelect from './ProductCollectionSelect';
+import LoadingBar from '../LoadingBar';
 
 const container = (theme) =>
   css({
@@ -231,6 +232,7 @@ function ControlPanel({ controls, errors }) {
     unsavedChange,
     saveIsActive,
     setControlPanelHeight,
+    saveStatus,
   } = useContentPage();
 
   const {
@@ -270,6 +272,8 @@ function ControlPanel({ controls, errors }) {
 
   return (
     <div css={[container, saveIsActive && fetchDisable]} ref={containerRef}>
+      <LoadingBar status={saveStatus} showStatusText={true} />
+
       <DeployInfo />
       <div css={mainContent}>
         {!showDeployInfo && (

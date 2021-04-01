@@ -10,7 +10,7 @@ import { transitionDurationAndTiming } from './styles';
 
 const container = (theme) =>
   css({
-    zIndex: 500,
+    zIndex: 2000,
     width: '100%',
     position: 'absolute',
     top: 0,

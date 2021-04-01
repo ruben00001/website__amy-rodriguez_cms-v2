@@ -10,14 +10,14 @@ const FetchProvider = ({ children }) => {
     authState: { token },
   } = useAuth();
 
-  // const baseURL = 'https://amyrodriguezcms.herokuapp.com';
-  const baseURL = useMemo(
-    () =>
-      process.env.NODE_ENV === 'development'
-        ? 'http://localhost:1337/'
-        : 'https://amyrodriguezcms.herokuapp.com',
-    []
-  );
+  const baseURL = 'https://amyrodriguezcms.herokuapp.com';
+  // const baseURL = useMemo(
+  //   () =>
+  //     process.env.NODE_ENV === 'development'
+  //       ? 'http://localhost:1337/'
+  //       : 'https://amyrodriguezcms.herokuapp.com',
+  //   []
+  // );
 
   const publicFetch = useMemo(
     () =>
