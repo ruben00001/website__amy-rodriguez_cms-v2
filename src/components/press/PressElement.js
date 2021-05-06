@@ -62,6 +62,7 @@ const visitLinkText = css({
   textAlign: 'right',
   backgroundColor: 'white',
   borderRadius: 2,
+  zIndex: 100,
 });
 
 function PressElement({
@@ -93,12 +94,18 @@ function PressElement({
           { type: 'delete', func: deleteElement },
         ]}
       />
-      {element.linkUrl && hovered && !isDragging && (
+      {element?.linkUrl && (
         <a
-          css={visitLinkText}
+          css={[
+            visitLinkText,
+            (!hovered || isDragging) && { zIndex: -1, opacity: 0 },
+          ]}
           href={element.linkUrl}
           target="_blank"
           rel="noreferrer"
+          onClick={() => {
+            console.log('hello');
+          }}
         >
           Visit site
           <FontAwesomeIcon icon={faExternalLinkAlt} css={{ marginLeft: 5 }} />

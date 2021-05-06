@@ -134,7 +134,6 @@ function EditTextPopup({ show, close, element, updateElement }) {
   }
 
   function handleExit() {
-    console.log('handling exit..');
     setInputTitle('');
     setInputLink('');
     close();
