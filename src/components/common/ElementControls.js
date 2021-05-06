@@ -34,7 +34,7 @@ const container = (theme) =>
     right: 0,
     display: 'flex',
     alignItems: 'center',
-    background: theme.colors.midgrey_7,
+    background: theme.colors.midgrey,
     color: 'white',
     borderRadius: 2.5,
     padding: '2px 8px',
@@ -109,7 +109,7 @@ function ElementControls({
 
   return (
     <div
-      css={[container, { transform }, !show && { opacity: 0 }]}
+      css={[container, { transform }, !show && { zIndex: -1, opacity: 0 }]}
       onMouseEnter={() => {
         if (onMouseEnter) onMouseEnter();
       }}

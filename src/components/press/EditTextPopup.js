@@ -58,7 +58,7 @@ const formStyle = css({
 
 const inputContainer = css({
   position: 'relative',
-  marginBottom: 40,
+  marginBottom: 80,
 });
 
 const inputStyle = css({
@@ -72,16 +72,28 @@ const inputStyle = css({
   },
 });
 
-const visitLinkText = css({
-  position: 'absolute',
-  right: 0,
-  bottom: -25,
-  fontSize: 12,
+const currentData = (theme) =>
+  css({
+    position: 'absolute',
+    left: 0,
+    bottom: -10,
+    transform: 'translateY(100%)',
+    fontSize: 12,
 
-  a: {
-    color: 'black',
-  },
-});
+    a: {
+      color: theme.colors.darkblue,
+    },
+  });
+
+const visitEntry = (theme) =>
+  css({
+    position: 'absolute',
+    top: 8,
+    right: -20,
+    transform: 'translateX(100%)',
+    fontSize: 11,
+    color: theme.colors.purple,
+  });
 
 const footer = (theme) =>
   css({
@@ -111,13 +123,20 @@ const confirmButton = (theme) =>
   });
 
 function EditTextPopup({ show, close, element, updateElement }) {
-  const [title, setTitle] = useState(element?.title);
-  const [link, setLink] = useState(element?.linkUrl);
+  const [inputTitle, setInputTitle] = useState('');
+  const [inputLink, setInputLink] = useState('');
 
   function handleSubmit(e) {
     e.preventDefault();
-    updateElement('title', title);
-    updateElement('linkUrl', link);
+    updateElement('title', inputTitle);
+    updateElement('linkUrl', inputLink);
+    close();
+  }
+
+  function handleExit() {
+    console.log('handling exit..');
+    setInputTitle('');
+    setInputLink('');
     close();
   }
 
@@ -125,11 +144,7 @@ function EditTextPopup({ show, close, element, updateElement }) {
     <div css={[container, !show && { display: 'none' }]}>
       <div css={body}>
         <div css={header}>
-          <FontAwesomeIcon
-            css={button}
-            icon={faTimes}
-            onClick={() => close()}
-          />
+          <FontAwesomeIcon css={button} icon={faTimes} onClick={handleExit} />
         </div>
         <div css={content}>
           <form css={formStyle} id="text-form" onSubmit={handleSubmit}>
@@ -139,9 +154,19 @@ function EditTextPopup({ show, close, element, updateElement }) {
                 css={inputStyle}
                 id="title"
                 type="text"
-                defaultValue={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={inputTitle}
+                onChange={(e) => setInputTitle(e.target.value)}
               />
+              <p css={currentData}>
+                Current:{' '}
+                {element?.title ? (
+                  <span>{element?.title}</span>
+                ) : (
+                  <span css={{ fontVariant: 'small-caps', color: 'red' }}>
+                    no title
+                  </span>
+                )}
+              </p>
             </div>
             <div css={inputContainer}>
               <label htmlFor="linkUrl">Link:</label>
@@ -149,27 +174,38 @@ function EditTextPopup({ show, close, element, updateElement }) {
                 css={inputStyle}
                 id="linkUrl"
                 type="url"
-                defaultValue={link}
-                onChange={(e) => setLink(e.target.value)}
+                value={inputLink}
+                onChange={(e) => setInputLink(e.target.value)}
               />
-              {link && (
-                <p css={visitLinkText}>
-                  Visit site{' '}
-                  <span>
-                    <a href={link} target="_blank" rel="noreferrer">
-                      <FontAwesomeIcon icon={faExternalLinkAlt} />
-                    </a>
+              <div css={currentData}>
+                Current:{' '}
+                {element?.linkUrl ? (
+                  <a href={element?.linkUrl} target="_blank" rel="noreferrer">
+                    {element?.linkUrl}
+                  </a>
+                ) : (
+                  <span css={{ fontVariant: 'small-caps', color: 'red' }}>
+                    no link{' '}
                   </span>
-                </p>
+                )}
+              </div>
+              {inputLink && (
+                <a
+                  css={visitEntry}
+                  href={inputLink}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Visit entry <FontAwesomeIcon icon={faExternalLinkAlt} />
+                </a>
               )}
             </div>
           </form>
         </div>
         <div css={footer}>
-          <div css={cancelButton} onClick={() => close()}>
+          <div css={cancelButton} onClick={handleExit}>
             Cancel
           </div>
-
           <button css={confirmButton} form="text-form" type="submit">
             Confirm
           </button>
